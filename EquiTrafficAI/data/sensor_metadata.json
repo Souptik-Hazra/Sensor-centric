@@ -1,0 +1,49 @@
+{
+  "la": {
+    "0": {
+      "highway_name": "US-101 Northbound",
+      "speed_limit_mph": 65,
+      "nearest_exit": "Exit 1 - Hollywood Blvd",
+      "alternate_route": "Sepulveda Blvd",
+      "district": 0
+    },
+    "1": {
+      "highway_name": "I-5 Southbound",
+      "speed_limit_mph": 65,
+      "nearest_exit": "Exit 2 - Stadium Way",
+      "alternate_route": "Mission Rd",
+      "district": 1
+    },
+    "2": {
+      "highway_name": "I-10 Eastbound",
+      "speed_limit_mph": 65,
+      "nearest_exit": "Exit 3 - Sunset Blvd",
+      "alternate_route": "Olympic Blvd",
+      "district": 2
+    },
+    "3": {
+      "highway_name": "I-405 Southbound",
+      "speed_limit_mph": 65,
+      "nearest_exit": "Exit 4 - Vermont Ave",
+      "alternate_route": "Wilshire Blvd",
+      "district": 3
+    },
+    "4": {
+      "highway_name": "SR-110 Northbound",
+      "speed_limit_mph": 55,
+      "nearest_exit": "Exit 5 - Western Ave",
+      "alternate_route": "Figueroa St",
+      "district": 0
+    }
+  },
+  "sd": {
+    "1114091": {
+      "highway_name": "I5-N Northbound",
+      "speed_limit_mph": 65,
+      "nearest_exit": "Exit 1 - Main St",
+      "alternate_route": "Pacific Highway",
+      "district": 11,
+      "lanes": 6
+    }
+  }
+}

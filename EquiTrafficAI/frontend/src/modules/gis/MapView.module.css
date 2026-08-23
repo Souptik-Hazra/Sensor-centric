@@ -1,0 +1,330 @@
+.mapContainer {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: #090d16;
+}
+
+.mapWrapper {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  z-index: 0;
+  width: 100%;
+}
+
+.mapHeaderOverlay {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  max-width: calc(100% - 420px);
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  flex-wrap: wrap;
+  transition: max-width 0.3s ease;
+}
+
+.mapHeaderOverlayFull {
+  max-width: calc(100% - 40px) !important;
+}
+
+.singleHeaderBar {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 8px 16px;
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  flex-wrap: wrap;
+}
+
+.headerTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+}
+
+.headerLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.headerSelect {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.headerSelect:hover {
+  border-color: #38bdf8;
+}
+
+.horizonBadge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.divider {
+  color: #334155;
+  font-weight: 300;
+}
+
+.replayBadge {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.toggleRightBtn {
+  background: #334155;
+  color: #f8fafc;
+  border: 1px solid #475569;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toggleRightBtn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+.mapLegend {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 14px 16px;
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+  color: #f8fafc;
+  font-size: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.legendTitle {
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
+.edgeToggle {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.sidebar {
+  width: 380px;
+  background-color: #1e293b;
+  border-left: 1px solid #334155;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #f8fafc;
+  flex-shrink: 0;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarClosed {
+  width: 0px !important;
+  padding: 0px !important;
+  overflow: hidden !important;
+  border-left: none !important;
+  display: none !important;
+}
+
+.card {
+  background-color: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s;
+}
+
+.cardPrimary {
+  border-color: #0284c7;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardTitlePrimary {
+  color: #38bdf8;
+}
+
+.controlsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.timeDisplay {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.timeText {
+  color: #38bdf8;
+  font-size: 15px;
+}
+
+.stepText {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.timeSlider {
+  width: 100%;
+  accent-color: #38bdf8;
+  margin: 4px 0 10px 0;
+  cursor: pointer;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btnPlay {
+  background-color: #059669;
+}
+
+.btnPause {
+  background-color: #d97706;
+}
+
+.btnReset {
+  background-color: #475569;
+}
+
+.btnAction {
+  width: 100%;
+  background-color: #0284c7;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.logBox {
+  margin-top: 10px;
+  background: #090d16;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.logText {
+  font-family: monospace;
+  font-size: 11px;
+  color: #38bdf8;
+  white-wrap: pre-wrap;
+  word-break: break-word;
+}

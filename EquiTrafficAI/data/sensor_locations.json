@@ -1,0 +1,1451 @@
+{
+  "0": {
+    "sensor_id": "0",
+    "lat": 34.0522,
+    "lon": -118.14370000000001,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "1": {
+    "sensor_id": "1",
+    "lat": 34.062183341664685,
+    "lon": -118.1441995834722,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "2": {
+    "sensor_id": "2",
+    "lat": 34.072066933079505,
+    "lon": -118.14569334221588,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "3": {
+    "sensor_id": "3",
+    "lat": 34.08175202066613,
+    "lon": -118.14816635108744,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "4": {
+    "sensor_id": "4",
+    "lat": 34.09114183423086,
+    "lon": -118.15159390059972,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "5": {
+    "sensor_id": "5",
+    "lat": 34.10014255386042,
+    "lon": -118.15594174381097,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "6": {
+    "sensor_id": "6",
+    "lat": 34.108664247339505,
+    "lon": -118.16116643850904,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "7": {
+    "sensor_id": "7",
+    "lat": 34.11662176872377,
+    "lon": -118.16721578127155,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "8": {
+    "sensor_id": "8",
+    "lat": 34.123935609089955,
+    "lon": -118.17402932906529,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "9": {
+    "sensor_id": "9",
+    "lat": 34.130532690962745,
+    "lon": -118.18153900317294,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "10": {
+    "sensor_id": "10",
+    "lat": 34.13634709848079,
+    "lon": -118.18966976941319,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "11": {
+    "sensor_id": "11",
+    "lat": 34.14132073600614,
+    "lon": -118.19834038785744,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "12": {
+    "sensor_id": "12",
+    "lat": 34.14540390859672,
+    "lon": -118.20746422455234,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "13": {
+    "sensor_id": "13",
+    "lat": 34.148555818541716,
+    "lon": -118.21695011713754,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "14": {
+    "sensor_id": "14",
+    "lat": 34.150744972998844,
+    "lon": -118.22670328570997,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "15": {
+    "sensor_id": "15",
+    "lat": 34.15194949866041,
+    "lon": -118.23662627983323,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "16": {
+    "sensor_id": "16",
+    "lat": 34.15215736030415,
+    "lon": -118.24661995223013,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "17": {
+    "sensor_id": "17",
+    "lat": 34.151366481045244,
+    "lon": -118.25658444942955,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "18": {
+    "sensor_id": "18",
+    "lat": 34.149584763087816,
+    "lon": -118.26642020946932,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "19": {
+    "sensor_id": "19",
+    "lat": 34.14683000876874,
+    "lon": -118.27602895668636,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "20": {
+    "sensor_id": "20",
+    "lat": 34.14312974268257,
+    "lon": -118.28531468365472,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "21": {
+    "sensor_id": "21",
+    "lat": 34.13852093666489,
+    "lon": -118.29418461046,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "22": {
+    "sensor_id": "22",
+    "lat": 34.133049640381955,
+    "lon": -118.30255011172554,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "23": {
+    "sensor_id": "23",
+    "lat": 34.12677052121767,
+    "lon": -118.31032760212798,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "24": {
+    "sensor_id": "24",
+    "lat": 34.119746318055114,
+    "lon": -118.31743937155413,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "25": {
+    "sensor_id": "25",
+    "lat": 34.112047214410396,
+    "lon": -118.3238143615547,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "26": {
+    "sensor_id": "26",
+    "lat": 34.103750137182146,
+    "lon": -118.3293888753369,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "27": {
+    "sensor_id": "27",
+    "lat": 34.09493798802338,
+    "lon": -118.33410721420171,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "28": {
+    "sensor_id": "28",
+    "lat": 34.08569881501559,
+    "lon": -118.33792223406687,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "29": {
+    "sensor_id": "29",
+    "lat": 34.076124932921395,
+    "lon": -118.34079581651497,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "30": {
+    "sensor_id": "30",
+    "lat": 34.066312000805986,
+    "lon": -118.34269924966004,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "31": {
+    "sensor_id": "31",
+    "lat": 34.05635806624333,
+    "lon": -118.34361351502733,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "32": {
+    "sensor_id": "32",
+    "lat": 34.04636258565724,
+    "lon": -118.34352947757948,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "33": {
+    "sensor_id": "33",
+    "lat": 34.03642543058567,
+    "lon": -118.3424479769909,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "34": {
+    "sensor_id": "34",
+    "lat": 34.026645889797315,
+    "lon": -118.34037981925795,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "35": {
+    "sensor_id": "35",
+    "lat": 34.01712167723104,
+    "lon": -118.33734566872909,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "36": {
+    "sensor_id": "36",
+    "lat": 34.00794795567052,
+    "lon": -118.33337584163341,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "37": {
+    "sensor_id": "37",
+    "lat": 33.99921638590915,
+    "lon": -118.32851000317105,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "38": {
+    "sensor_id": "38",
+    "lat": 33.991014210905725,
+    "lon": -118.32279677119145,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "39": {
+    "sensor_id": "39",
+    "lat": 33.983423384081604,
+    "lon": -118.31629323042002,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "40": {
+    "sensor_id": "40",
+    "lat": 33.97651975046921,
+    "lon": -118.30906436208636,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "41": {
+    "sensor_id": "41",
+    "lat": 33.97037228889356,
+    "lon": -118.30118239465332,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "42": {
+    "sensor_id": "42",
+    "lat": 33.96504242275864,
+    "lon": -118.29272608213408,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "43": {
+    "sensor_id": "43",
+    "lat": 33.96058340632506,
+    "lon": -118.28377991720801,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "44": {
+    "sensor_id": "44",
+    "lat": 33.95703979261105,
+    "lon": -118.27443328699785,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "45": {
+    "sensor_id": "45",
+    "lat": 33.95444698823349,
+    "lon": -118.26477957994308,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "46": {
+    "sensor_id": "46",
+    "lat": 33.95283089963665,
+    "lon": -118.25491525269351,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "47": {
+    "sensor_id": "47",
+    "lat": 33.95220767424359,
+    "lon": -118.24493886634629,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "48": {
+    "sensor_id": "48",
+    "lat": 33.95258353911642,
+    "lon": -118.23495010165605,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "49": {
+    "sensor_id": "49",
+    "lat": 33.953954738737565,
+    "lon": -118.22504876305774,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "50": {
+    "sensor_id": "50",
+    "lat": 33.95630757253369,
+    "lon": -118.21533378145368,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "51": {
+    "sensor_id": "51",
+    "lat": 33.95961853176723,
+    "lon": -118.2059022257287,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "52": {
+    "sensor_id": "52",
+    "lat": 33.96385453442798,
+    "lon": -118.19684833286996,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "53": {
+    "sensor_id": "53",
+    "lat": 33.96897325577761,
+    "lon": -118.1882625663821,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "54": {
+    "sensor_id": "54",
+    "lat": 33.9749235512444,
+    "lon": -118.18023071240574,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "55": {
+    "sensor_id": "55",
+    "lat": 33.98164596744296,
+    "lon": -118.17283302257088,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "56": {
+    "sensor_id": "56",
+    "lat": 33.98907333621277,
+    "lon": -118.16614341214898,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "57": {
+    "sensor_id": "57",
+    "lat": 33.99713144574024,
+    "lon": -118.16022872151609,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "58": {
+    "sensor_id": "58",
+    "lat": 34.005739782058626,
+    "lon": -118.15514804830588,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "59": {
+    "sensor_id": "59",
+    "lat": 34.01481233351698,
+    "lon": -118.1509521569256,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "60": {
+    "sensor_id": "60",
+    "lat": 34.024258450180106,
+    "lon": -118.14768297133497,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "61": {
+    "sensor_id": "61",
+    "lat": 34.03398374957279,
+    "lon": -118.14537315615574,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "62": {
+    "sensor_id": "62",
+    "lat": 34.04389105971825,
+    "lon": -118.14404579029768,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "63": {
+    "sensor_id": "63",
+    "lat": 34.05388139004843,
+    "lon": -118.14371413636167,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "64": {
+    "sensor_id": "64",
+    "lat": 34.06385492048505,
+    "lon": -118.14438150812418,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "65": {
+    "sensor_id": "65",
+    "lat": 34.07371199880878,
+    "lon": -118.1460412374272,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "66": {
+    "sensor_id": "66",
+    "lat": 34.08335413635134,
+    "lon": -118.14867674080415,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "67": {
+    "sensor_id": "67",
+    "lat": 34.092684992061656,
+    "lon": -118.15226168517647,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "68": {
+    "sensor_id": "68",
+    "lat": 34.10161133511386,
+    "lon": -118.15676025096502,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "69": {
+    "sensor_id": "69",
+    "lat": 34.11004397643882,
+    "lon": -118.16212748998747,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "70": {
+    "sensor_id": "70",
+    "lat": 34.11789865987188,
+    "lon": -118.16830977456567,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "71": {
+    "sensor_id": "71",
+    "lat": 34.12509690401259,
+    "lon": -118.17524533335572,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "72": {
+    "sensor_id": "72",
+    "lat": 34.131566786384916,
+    "lon": -118.18286486854677,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "73": {
+    "sensor_id": "73",
+    "lat": 34.13724366206286,
+    "lon": -118.1910922482619,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "74": {
+    "sensor_id": "74",
+    "lat": 34.14207080958116,
+    "lon": -118.19984526724257,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "75": {
+    "sensor_id": "75",
+    "lat": 34.14599999767747,
+    "lon": -118.2090364682165,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "76": {
+    "sensor_id": "76",
+    "lat": 34.148991967203145,
+    "lon": -118.21857401574178,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "77": {
+    "sensor_id": "77",
+    "lat": 34.1510168233877,
+    "lon": -118.22836261379622,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "78": {
+    "sensor_id": "78",
+    "lat": 34.15205433453746,
+    "lon": -118.23830445794374,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "79": {
+    "sensor_id": "79",
+    "lat": 34.152094134183976,
+    "lon": -118.24830021256396,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "80": {
+    "sensor_id": "80",
+    "lat": 34.15113582466234,
+    "lon": -118.25825000338087,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "81": {
+    "sensor_id": "81",
+    "lat": 34.14918898108451,
+    "lon": -118.26805441537358,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "82": {
+    "sensor_id": "82",
+    "lat": 34.146273055667976,
+    "lon": -118.27761548609838,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "83": {
+    "sensor_id": "83",
+    "lat": 34.14241718337563,
+    "lon": -118.28683768449707,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "84": {
+    "sensor_id": "84",
+    "lat": 34.13765989080883,
+    "lon": -118.29562886541167,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "85": {
+    "sensor_id": "85",
+    "lat": 34.13204871126235,
+    "lon": -118.30390119026849,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "86": {
+    "sensor_id": "86",
+    "lat": 34.12563970978741,
+    "lon": -118.311572004732,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "87": {
+    "sensor_id": "87",
+    "lat": 34.118496923008216,
+    "lon": -118.31856466455974,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "88": {
+    "sensor_id": "88",
+    "lat": 34.11069171928918,
+    "lon": -118.32480930140618,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "89": {
+    "sensor_id": "89",
+    "lat": 34.10230208564579,
+    "lon": -118.33024352092411,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "90": {
+    "sensor_id": "90",
+    "lat": 34.09341184852418,
+    "lon": -118.33481302618847,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "91": {
+    "sensor_id": "91",
+    "lat": 34.08410983623494,
+    "lon": -118.33847216021312,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "92": {
+    "sensor_id": "92",
+    "lat": 34.07448899141002,
+    "lon": -118.34118436214042,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "93": {
+    "sensor_id": "93",
+    "lat": 34.0646454423507,
+    "lon": -118.34292253254526,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "94": {
+    "sensor_id": "94",
+    "lat": 34.054677542545335,
+    "lon": -118.34366930420353,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "95": {
+    "sensor_id": "95",
+    "lat": 34.04468488795382,
+    "lon": -118.34341721561964,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "96": {
+    "sensor_id": "96",
+    "lat": 34.0347673218777,
+    "lon": -118.34216878557942,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "97": {
+    "sensor_id": "97",
+    "lat": 34.0250239373589,
+    "lon": -118.33993648798314,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "98": {
+    "sensor_id": "98",
+    "lat": 34.01555208707481,
+    "lon": -118.33674262721048,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "99": {
+    "sensor_id": "99",
+    "lat": 34.006446410622466,
+    "lon": -118.33261911526255,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "100": {
+    "sensor_id": "100",
+    "lat": 33.99779788891106,
+    "lon": -118.32760715290765,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "101": {
+    "sensor_id": "101",
+    "lat": 33.98969293511071,
+    "lon": -118.32175681801692,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "102": {
+    "sensor_id": "102",
+    "lat": 33.98221253124065,
+    "lon": -118.31512656520272,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "103": {
+    "sensor_id": "103",
+    "lat": 33.97543141902364,
+    "lon": -118.3077826417595,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "104": {
+    "sensor_id": "104",
+    "lat": 33.96941735309144,
+    "lon": -118.29979842574272,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "105": {
+    "sensor_id": "105",
+    "lat": 33.964230424002835,
+    "lon": -118.2912536927996,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "106": {
+    "sensor_id": "106",
+    "lat": 33.959922457838715,
+    "lon": -118.28223381907719,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "107": {
+    "sensor_id": "107",
+    "lat": 33.956536498372984,
+    "lon": -118.27282892817213,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "108": {
+    "sensor_id": "108",
+    "lat": 33.95410637699335,
+    "lon": -118.26313299064553,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "109": {
+    "sensor_id": "109",
+    "lat": 33.95265637466936,
+    "lon": -118.2532428851001,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "110": {
+    "sensor_id": "110",
+    "lat": 33.95220097934493,
+    "lon": -118.2432574302012,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "111": {
+    "sensor_id": "111",
+    "lat": 33.9527447411796,
+    "lon": -118.23327639731343,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "112": {
+    "sensor_id": "112",
+    "lat": 33.95428222708487,
+    "lon": -118.22339951361813,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "113": {
+    "sensor_id": "113",
+    "lat": 33.95679807500979,
+    "lon": -118.2137254656723,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "114": {
+    "sensor_id": "114",
+    "lat": 33.960267147433534,
+    "lon": -118.20435091336522,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "115": {
+    "sensor_id": "115",
+    "lat": 33.964654782531156,
+    "lon": -118.1953695241247,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "116": {
+    "sensor_id": "116",
+    "lat": 33.96991714050313,
+    "lon": -118.18687103702321,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "117": {
+    "sensor_id": "117",
+    "lat": 33.97600164160809,
+    "lon": -118.17894036613461,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "118": {
+    "sensor_id": "118",
+    "lat": 33.982847491522286,
+    "lon": -118.17165675210092,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "119": {
+    "sensor_id": "119",
+    "lat": 33.99038628877629,
+    "lon": -118.1650929703859,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "120": {
+    "sensor_id": "120",
+    "lat": 33.998542708199956,
+    "lon": -118.15931460412675,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "121": {
+    "sensor_id": "121",
+    "lat": 34.00723525354654,
+    "lon": -118.15437938884907,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "122": {
+    "sensor_id": "122",
+    "lat": 34.01637707177632,
+    "lon": -118.15033663559254,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "123": {
+    "sensor_id": "123",
+    "lat": 34.02587682086342,
+    "lon": -118.14722673821134,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "124": {
+    "sensor_id": "124",
+    "lat": 34.03563958245517,
+    "lon": -118.14508076977212,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "125": {
+    "sensor_id": "125",
+    "lat": 34.04556781026488,
+    "lon": -118.14392017208215,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "126": {
+    "sensor_id": "126",
+    "lat": 34.055562304722116,
+    "lon": -118.1437565414499,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "127": {
+    "sensor_id": "127",
+    "lat": 34.065523204141996,
+    "lon": -118.14459151281858,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "128": {
+    "sensor_id": "128",
+    "lat": 34.07535098251015,
+    "lon": -118.14641674343027,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "129": {
+    "sensor_id": "129",
+    "lat": 34.08494744391377,
+    "lon": -118.14921399618402,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "130": {
+    "sensor_id": "130",
+    "lat": 34.09421670368266,
+    "lon": -118.15295532185499,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "131": {
+    "sensor_id": "131",
+    "lat": 34.103066146437236,
+    "lon": -118.15760333835377,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "132": {
+    "sensor_id": "132",
+    "lat": 34.111407351470724,
+    "lon": -118.16311160423597,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "133": {
+    "sensor_id": "133",
+    "lat": 34.11915697621966,
+    "lon": -118.16942508272963,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "134": {
+    "sensor_id": "134",
+    "lat": 34.126237588995245,
+    "lon": -118.17648069164466,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "135": {
+    "sensor_id": "135",
+    "lat": 34.13257844265516,
+    "lon": -118.18420793366901,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "136": {
+    "sensor_id": "136",
+    "lat": 34.13811618148565,
+    "lon": -118.1925296007547,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "137": {
+    "sensor_id": "137",
+    "lat": 34.142795474230844,
+    "lon": -118.20136254555494,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "138": {
+    "sensor_id": "138",
+    "lat": 34.14656956694441,
+    "lon": -118.2106185122051,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "139": {
+    "sensor_id": "139",
+    "lat": 34.1494007501395,
+    "lon": -118.22020501814602,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "140": {
+    "sensor_id": "140",
+    "lat": 34.15126073556949,
+    "lon": -118.23002627817922,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "141": {
+    "sensor_id": "141",
+    "lat": 34.15213093887479,
+    "lon": -118.23998416152092,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "142": {
+    "sensor_id": "142",
+    "lat": 34.15200266527164,
+    "lon": -118.24997917229241,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "143": {
+    "sensor_id": "143",
+    "lat": 34.15087719642746,
+    "lon": -118.25991144364997,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "144": {
+    "sensor_id": "144",
+    "lat": 34.14876577765493,
+    "lon": -118.26968173562138,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "145": {
+    "sensor_id": "145",
+    "lat": 34.14568950555247,
+    "lon": -118.27919242667888,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "146": {
+    "sensor_id": "146",
+    "lat": 34.141679117214046,
+    "lon": -118.28834848914123,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "147": {
+    "sensor_id": "147",
+    "lat": 34.13677468311429,
+    "lon": -118.29705843865892,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "148": {
+    "sensor_id": "148",
+    "lat": 34.13102520673753,
+    "lon": -118.30523524829547,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "149": {
+    "sensor_id": "149",
+    "lat": 34.1244881349512,
+    "lon": -118.31279721807192,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "150": {
+    "sensor_id": "150",
+    "lat": 34.11722878401571,
+    "lon": -118.31966879128589,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "151": {
+    "sensor_id": "151",
+    "lat": 34.109319686965996,
+    "lon": -118.32578130944927,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "152": {
+    "sensor_id": "152",
+    "lat": 34.10083986888538,
+    "lon": -118.33107369830111,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "153": {
+    "sensor_id": "153",
+    "lat": 34.09187405731306,
+    "lon": -118.33549307804144,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "154": {
+    "sensor_id": "154",
+    "lat": 34.082511835674566,
+    "lon": -118.33899529168872,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "155": {
+    "sensor_id": "155",
+    "lat": 34.072846748193776,
+    "lon": -118.34154534628189,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "156": {
+    "sensor_id": "156",
+    "lat": 34.062975365229946,
+    "lon": -118.34311776251839,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "157": {
+    "sensor_id": "157",
+    "lat": 34.05299631837859,
+    "lon": -118.34369682933493,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "158": {
+    "sensor_id": "158",
+    "lat": 34.04300931497723,
+    "lon": -118.34327676088733,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "159": {
+    "sensor_id": "159",
+    "lat": 34.03311414186258,
+    "lon": -118.34186175436064,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "160": {
+    "sensor_id": "160",
+    "lat": 34.02340966833349,
+    "lon": -118.33946594803234,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "161": {
+    "sensor_id": "161",
+    "lat": 34.0139928582816,
+    "lon": -118.33611328000731,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "162": {
+    "sensor_id": "162",
+    "lat": 34.00495780136015,
+    "lon": -118.33183724903623,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "163": {
+    "sensor_id": "163",
+    "lat": 33.99639477287132,
+    "lon": -118.32668057980707,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "164": {
+    "sensor_id": "164",
+    "lat": 33.988389331765205,
+    "lon": -118.32069479605421,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "165": {
+    "sensor_id": "165",
+    "lat": 33.981021465763085,
+    "lon": -118.31393970575027,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "166": {
+    "sensor_id": "166",
+    "lat": 33.97436479214657,
+    "lon": -118.30648280352464,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "167": {
+    "sensor_id": "167",
+    "lat": 33.968485822198026,
+    "lon": -118.29839859627943,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "168": {
+    "sensor_id": "168",
+    "lat": 33.96344329664185,
+    "lon": -118.28976785874114,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "169": {
+    "sensor_id": "169",
+    "lat": 33.95928759872656,
+    "lon": -118.28067682638633,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "170": {
+    "sensor_id": "170",
+    "lat": 33.956060250812044,
+    "lon": -118.27121633380516,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "171": {
+    "sensor_id": "171",
+    "lat": 33.95379349949184,
+    "lon": -118.26148090711231,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "172": {
+    "sensor_id": "172",
+    "lat": 33.95250999339584,
+    "lon": -118.2515678194732,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "173": {
+    "sensor_id": "173",
+    "lat": 33.9522225568927,
+    "lon": -118.24157611918264,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "174": {
+    "sensor_id": "174",
+    "lat": 33.95293406195294,
+    "lon": -118.23160564000716,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "175": {
+    "sensor_id": "175",
+    "lat": 33.95463739945318,
+    "lon": -118.22175600367886,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "176": {
+    "sensor_id": "176",
+    "lat": 33.957315550208186,
+    "lon": -118.21212562450808,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "177": {
+    "sensor_id": "177",
+    "lat": 33.96094175502088,
+    "lon": -118.20281072606012,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "178": {
+    "sensor_id": "178",
+    "lat": 33.96547978205144,
+    "lon": -118.19390437972116,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "179": {
+    "sensor_id": "179",
+    "lat": 33.97088428883385,
+    "lon": -118.1854955747598,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "180": {
+    "sensor_id": "180",
+    "lat": 33.97710127532283,
+    "lon": -118.1776683291756,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "181": {
+    "sensor_id": "181",
+    "lat": 33.98406862344445,
+    "lon": -118.17050085021911,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "182": {
+    "sensor_id": "182",
+    "lat": 33.991716717759374,
+    "lon": -118.16406475297082,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "183": {
+    "sensor_id": "183",
+    "lat": 33.999969141037326,
+    "lon": -118.15842434478692,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "184": {
+    "sensor_id": "184",
+    "lat": 34.00874343779281,
+    "lon": -118.15363598276153,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "185": {
+    "sensor_id": "185",
+    "lat": 34.01795193815304,
+    "lon": -118.14974751062518,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "186": {
+    "sensor_id": "186",
+    "lat": 34.02750263382634,
+    "lon": -118.1467977807061,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "187": {
+    "sensor_id": "187",
+    "lat": 34.03730009741858,
+    "lon": -118.14481626573058,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "188": {
+    "sensor_id": "188",
+    "lat": 34.047246435912164,
+    "lon": -118.14382276434128,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "189": {
+    "sensor_id": "189",
+    "lat": 34.05724226878068,
+    "lon": -118.14382720327565,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "190": {
+    "sensor_id": "190",
+    "lat": 34.067187720966295,
+    "lon": -118.14482953818134,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "191": {
+    "sensor_id": "191",
+    "lat": 34.07698342079829,
+    "lon": -118.14681975405928,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "192": {
+    "sensor_id": "192",
+    "lat": 34.08653149288199,
+    "lon": -118.14977796533032,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "193": {
+    "sensor_id": "193",
+    "lat": 34.095736536037286,
+    "lon": -118.15367461452527,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "194": {
+    "sensor_id": "194",
+    "lat": 34.10450657651577,
+    "lon": -118.15847076761345,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "195": {
+    "sensor_id": "195",
+    "lat": 34.11275398697196,
+    "lon": -118.16411850301861,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "196": {
+    "sensor_id": "196",
+    "lat": 34.120396362006815,
+    "lon": -118.17056139043545,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "197": {
+    "sensor_id": "197",
+    "lat": 34.127357341535216,
+    "lon": -118.17773505466266,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "198": {
+    "sensor_id": "198",
+    "lat": 34.13356737375071,
+    "lon": -118.18556781881855,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "199": {
+    "sensor_id": "199",
+    "lat": 34.13896441006417,
+    "lon": -118.19398142051288,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "200": {
+    "sensor_id": "200",
+    "lat": 34.14349452507276,
+    "lon": -118.20289179381867,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "201": {
+    "sensor_id": "201",
+    "lat": 34.14711245536479,
+    "lon": -118.2122099092312,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "202": {
+    "sensor_id": "202",
+    "lat": 34.1497820517767,
+    "lon": -118.22184266322148,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "203": {
+    "sensor_id": "203",
+    "lat": 34.15147664058359,
+    "lon": -118.23169380849576,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "204": {
+    "sensor_id": "204",
+    "lat": 34.15217929001427,
+    "lon": -118.24166491566683,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "205": {
+    "sensor_id": "205",
+    "lat": 34.15188297942788,
+    "lon": -118.25165635672786,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  },
+  "206": {
+    "sensor_id": "206",
+    "lat": 34.15059066946186,
+    "lon": -118.26156830050247,
+    "freeway": "SR-134 / I-5 Corridor",
+    "city": "la"
+  }
+}
