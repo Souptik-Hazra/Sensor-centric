@@ -1,0 +1,107 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 36
+skinparam ranksep 34
+skinparam ArrowColor #2563eb
+skinparam ClassBorderColor #1e3a8a
+skinparam ClassFontColor #0f172a
+skinparam ClassBackgroundColor #eff6ff
+skinparam packageBorderColor #93c5fd
+skinparam packageBackgroundColor #ffffff
+
+package "Telemetry and Preparation" #eff6ff {
+  class TrafficDataRepository {
+    - trafficObservations
+    - sensorMetadata
+    - networkCoverage
+  }
+
+  class DataPreprocessor {
+    - cleaningRules
+    - qualityProfile
+    + preprocessData()
+    + standardizeInputs()
+  }
+
+  class SensorHealthAssessor {
+    - reliabilityIndicators
+    - anomalySignals
+    + assessReliability()
+    + flagDegradation()
+  }
+}
+
+package "Forecasting" #fef3c7 {
+  abstract class TrafficForecastModel {
+    - modelConfiguration
+    - forecastHorizon
+    + train()
+    + forecast()
+    + evaluate()
+  }
+
+  class ForecastingCoordinator {
+    - modelPortfolio
+    - forecastResults
+    + configureForecasting()
+    + generateForecast()
+  }
+}
+
+package "Causal Analysis" #f0fdfa {
+  class CausalAnalysisService {
+    - causalSpecification
+    - analysisResults
+    + analyzeDisparity()
+    + performCausalAnalysis()
+  }
+
+  class RegionalErrorAnalyzer {
+    - regionalDisparities
+    - explanationProfile
+    + compareRegions()
+    + summarizeEffects()
+  }
+}
+
+package "Digital Twin and Decision Support" #faf5ff {
+  class DigitalTwinSimulator {
+    - simulationState
+    - maintenanceScenario
+    + defineScenario()
+    + simulateIntervention()
+  }
+
+  class DecisionSupportService {
+    - evidenceSummary
+    - visualizationArtifacts
+    + displayResults()
+    + generateReport()
+  }
+}
+
+TrafficDataRepository --> DataPreprocessor : provides telemetry
+DataPreprocessor --> SensorHealthAssessor : supplies cleaned data
+SensorHealthAssessor --> ForecastingCoordinator : reliability inputs
+SensorHealthAssessor --> CausalAnalysisService : health indicators
+TrafficForecastModel <|-- ForecastingCoordinator
+ForecastingCoordinator --> CausalAnalysisService : forecast outputs
+CausalAnalysisService --> RegionalErrorAnalyzer : disparity findings
+RegionalErrorAnalyzer --> DigitalTwinSimulator : scenario evidence
+DigitalTwinSimulator --> DecisionSupportService : simulation outputs
+ForecastingCoordinator --> DecisionSupportService : forecast summaries
+CausalAnalysisService --> DecisionSupportService : causal findings
+
+' Subtle ordering hints to keep the layout balanced in renderers
+TrafficDataRepository -[hidden]right-> TrafficForecastModel
+TrafficForecastModel -[hidden]right-> CausalAnalysisService
+CausalAnalysisService -[hidden]right-> DigitalTwinSimulator
+DigitalTwinSimulator -[hidden]right-> DecisionSupportService
+
+@enduml

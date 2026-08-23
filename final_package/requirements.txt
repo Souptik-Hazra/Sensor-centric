@@ -1,0 +1,23 @@
+# ============================================================================
+# METR-LA Structural Causal Digital Twin — Python Requirements
+# Verified on: Python 3.11 | Windows 11 | Pipeline: 13/13 PASSED (40.76s)
+# ============================================================================
+
+# --- Deep Learning & GNN Model Training (DCRNN, GWNet, DLinear, HA) ---
+torch>=2.0.0                    # PyTorch tensor engine (CPU/GPU)
+
+# --- Scientific Computing & SIMD Vectorization ---
+numpy>=1.23.0                   # C-level SIMD array operations & matrix broadcasting
+scipy>=1.9.0                    # Sparse CSR matrices, statistical tests, spatial distance
+pandas>=1.5.0                   # DataFrame telemetry processing & CSV export
+
+# --- Machine Learning & Graph Analysis ---
+scikit-learn>=1.1.0             # K-Means clustering, PCA reliability weighting
+networkx>=3.0                   # Graph topology analysis & DAG visualization
+
+# --- Visualization ---
+matplotlib>=3.5.0               # Publication-grade 300 DPI SCM DAG & architecture diagrams
+
+# --- HuggingFace METR-LA Dataset Loading ---
+datasets>=2.10.0                # HuggingFace Datasets (witgaw/METR-LA)
+huggingface-hub>=0.15.0         # HuggingFace Hub file downloads (adj_mx.npy, sensor_locations.csv)

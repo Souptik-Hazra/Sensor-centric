@@ -1,0 +1,38 @@
+{
+  "system_name": "METR-LA Urban Highway Structural Causal Digital Twin",
+  "total_physical_sensors": 207,
+  "baseline_metrics": {
+    "network_mean_error_mph": 2.9173841491863097,
+    "regional_fairness_rsf": 0.09204127298953725,
+    "hardware_stuck_zero_dropout_rate_pct": 7.128495483633836,
+    "real_physical_traffic_jam_rate_pct": 0.0,
+    "hardware_zero_rate_pct": 7.128495483633836
+  },
+  "causal_sfm_attribution": {
+    "Ctf_DE_direct_density_pct": 21.4,
+    "Ctf_IE_R_reliability_pct": 61.3,
+    "Ctf_IE_T_topology_protective_buffer": -0.08056,
+    "Ctf_SE_spurious_confounding": 0.0
+  },
+  "counterfactual_simulations": {
+    "hardware_repair_scenario": {
+      "target_district": 3,
+      "sensors_upgraded": 28,
+      "baseline_rsf": 0.09204127298953725,
+      "simulated_rsf": 0.08115529451348509,
+      "equity_improvement_percent": 11.827279352480945,
+      "interventional_latency_ms": 0.887
+    },
+    "density_expansion_scenario": {
+      "target_district": 3,
+      "new_sensors": 5,
+      "current_density": 7.79,
+      "simulated_density": 7.96,
+      "cost_usd": 250000,
+      "simulated_rsf": 0.09158951077807484,
+      "equity_improvement_percent": 0.4908256880733987,
+      "cost_per_rsf_point_usd": 509345.79,
+      "latency_ms": 1.213
+    }
+  }
+}

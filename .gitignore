@@ -57,6 +57,7 @@ ENV/
 
 # 📊 System Logs & Temporary Artifacts
 *.log
+result.json
 .system_generated/
 scratch/
 temp/

@@ -1,0 +1,99 @@
+@startuml
+top to bottom direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 26
+skinparam ranksep 38
+
+skinparam ArrowColor #0f766e
+skinparam ClassBorderColor #134e4a
+skinparam ClassFontColor #111827
+skinparam ClassBackgroundColor #f0fdfa
+skinparam packageBorderColor #5eead4
+skinparam packageBackgroundColor #ffffff
+
+package "Telemetry Inputs" #ecfeff {
+  abstract class TelemetryRecord {
+    - sensorIdentifier
+    - observationWindow
+    + validateInput()
+  }
+
+  class SensorTelemetry {
+    - speedObservations
+    - sensorMetadata
+    + collectTelemetry()
+  }
+
+  class TrafficObservation {
+    - timestampedFlow
+    - trafficState
+    + summarizeObservation()
+  }
+
+  TelemetryRecord <|-- SensorTelemetry
+  TelemetryRecord <|-- TrafficObservation
+}
+
+package "Reliability and Causal Analysis" #f0fdfa {
+  abstract class ReliabilityAnalyzer {
+    - reliabilityProfile
+    + assessReliability()
+  }
+
+  class SensorReliabilityAssessment {
+    - reliabilityIndicators
+    - degradationSignals
+    + evaluateSensorHealth()
+  }
+
+  class AnomalyEvaluator {
+    - anomalyEvidence
+    - outlierPattern
+    + detectAnomalies()
+  }
+
+  class RoadNetwork {
+    - networkStructure
+    - spatialRelationships
+    + interpretContext()
+  }
+
+  class CausalModel {
+    - causalStructure
+    - causalVariables
+    + analyzeRelationships()
+  }
+
+  class PredictionErrorAnalysis {
+    - predictionErrors
+    - regionalAnalysis
+    + analyzeDisparity()
+  }
+
+  ReliabilityAnalyzer <|-- SensorReliabilityAssessment
+  ReliabilityAnalyzer <|-- AnomalyEvaluator
+}
+
+' Package ordering to keep the vertical layout stable
+TelemetryRecord -[hidden]down-> ReliabilityAnalyzer
+ReliabilityAnalyzer -[hidden]down-> RoadNetwork
+RoadNetwork -[hidden]down-> CausalModel
+CausalModel -[hidden]down-> PredictionErrorAnalysis
+
+' Conceptual flow
+SensorTelemetry --> SensorReliabilityAssessment : informs
+TrafficObservation --> AnomalyEvaluator : supports
+RoadNetwork --> SensorReliabilityAssessment : contextualizes
+RoadNetwork --> CausalModel : supports structure
+SensorReliabilityAssessment --> CausalModel : provides reliability evidence
+AnomalyEvaluator --> CausalModel : provides anomaly evidence
+CausalModel --> PredictionErrorAnalysis : explains disparity
+SensorTelemetry --> PredictionErrorAnalysis : supplies observations
+RoadNetwork --> PredictionErrorAnalysis : grounds analysis
+
+@enduml

@@ -1,0 +1,6 @@
+"pathway","estimate","ci_lower","ci_upper","std_error","p_value","pct_attribution"
+"Total Effect (TE)",0.0898,-0.0795,0.2882,0.0942,0.3406,"100%"
+"Direct Effect (Ctf-DE)",0.1588,-0.0426,0.386,0.1085,0.1434,"176.8%"
+"Indirect via Reliability (Ctf-IE_R)",0.0116,-0.0191,0.0651,0.0209,0.5795,"12.9%"
+"Indirect via Topology (Ctf-IE_T)",-0.0806,-0.181,0.017,0.0501,0.1078,"-89.7%"
+"Spurious Confounding (Ctf-SE)",0,0,0,0,0.1917,"0%"

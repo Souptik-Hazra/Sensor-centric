@@ -1,0 +1,75 @@
+@startuml
+top to bottom direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 26
+skinparam ranksep 28
+
+skinparam ArrowColor #b45309
+skinparam ClassBorderColor #92400e
+skinparam ClassFontColor #111827
+skinparam ClassBackgroundColor #fffbeb
+skinparam packageBorderColor #fbbf24
+skinparam packageBackgroundColor #ffffff
+
+package "Forecasting Model Hierarchy" #fffbeb {
+  abstract class TrafficForecastingModel <<abstract>> {
+    - modelConfiguration
+    - forecastHorizon
+    - evaluationProfile
+    + train()
+    + forecast()
+    + evaluate()
+  }
+
+  class HistoricalAverage {
+    - baselineWindow
+  }
+
+  class DLinear {
+    - seasonalTrendProfile
+  }
+
+  class DCRNN {
+    - diffusionSettings
+  }
+
+  class GraphWaveNet {
+    - adaptiveAdjacencyProfile
+  }
+
+  class ForecastModelEvaluation {
+    - comparisonMetrics
+    - selectedModel
+    + rankModels()
+    + reportBestModel()
+  }
+
+  TrafficForecastingModel <|-- HistoricalAverage
+  TrafficForecastingModel <|-- DLinear
+  TrafficForecastingModel <|-- DCRNN
+  TrafficForecastingModel <|-- GraphWaveNet
+
+  TrafficForecastingModel --> ForecastModelEvaluation : evaluates
+  ForecastModelEvaluation ..> HistoricalAverage : compares
+  ForecastModelEvaluation ..> DLinear : compares
+  ForecastModelEvaluation ..> DCRNN : compares
+  ForecastModelEvaluation ..> GraphWaveNet : compares
+
+  TrafficForecastingModel -[hidden]down-> ForecastModelEvaluation
+  HistoricalAverage -[hidden]right-> DLinear
+  DLinear -[hidden]right-> DCRNN
+  DCRNN -[hidden]right-> GraphWaveNet
+}
+
+note bottom of TrafficForecastingModel
+Shared abstraction for comparative
+forecasting evaluation in the proposed
+framework.
+end note
+
+@enduml

@@ -1,0 +1,55 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam ArrowColor #7c3aed
+skinparam ClassBorderColor #5b21b6
+skinparam ClassFontColor #111827
+skinparam ClassBackgroundColor #faf5ff
+skinparam packageBorderColor #c4b5fd
+skinparam packageBackgroundColor #ffffff
+
+package "Digital Twin Core" {
+  class DigitalTwin {
+    - systemState
+    - simulatedState
+  }
+}
+
+package "Scenario Definition" {
+  class MaintenanceScenario {
+    - targetSensors
+    - interventionType
+  }
+}
+
+package "Counterfactual Simulation" {
+  class CounterfactualSimulation {
+    - simulationParameters
+    - simulationResults
+  }
+}
+
+package "Equity Assessment" {
+  class EquityAssessment {
+    - regionalMetrics
+  }
+}
+
+package "Decision Support" {
+  class DecisionSupport {
+    - decisionInformation
+    - report
+  }
+}
+
+MaintenanceScenario --> CounterfactualSimulation : configures
+DigitalTwin --> CounterfactualSimulation : evaluates
+CounterfactualSimulation --> EquityAssessment : produces outcomes
+EquityAssessment --> DecisionSupport : summarizes equity
+DigitalTwin --> DecisionSupport : supplies system state
+CounterfactualSimulation --> DecisionSupport : supplies evidence
+
+@enduml

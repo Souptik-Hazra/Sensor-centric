@@ -1,0 +1,6 @@
+"pathway","estimate"
+"Total Effect (TE)",0.0897856338473074
+"Direct Effect (Ctf-DE)",0.158758947958809
+"Indirect via Reliability (Ctf-IE_R)",0.0115892418636627
+"Indirect via Topology (Ctf-IE_T)",-0.0805625559751647
+"Spurious Confounding (Ctf-SE)",-1.38777878078145e-17
