@@ -81,13 +81,17 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
 
       if (response && response.ok) {
         const data = await response.json();
-        const autoMsg = {
-          sender: 'bot',
-          text: data.llm_response,
-          time: timeLabel,
-          isAutoAlert: true
-        };
-        setMessages(prev => [...prev, autoMsg]);
+        setMessages(prev => {
+          if (prev.length > 0 && prev[prev.length - 1].text === data.llm_response) {
+            return prev;
+          }
+          return [...prev, {
+            sender: 'bot',
+            text: data.llm_response,
+            time: timeLabel,
+            isAutoAlert: true
+          }];
+        });
       }
     } catch (err) {
       console.error('Auto alert fetch error:', err);
@@ -101,7 +105,7 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
     const userMsg = {
       sender: 'user',
       text: textToSend,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: getDisplayTime(currentStep)
     };
 
     setMessages(prev => [...prev, userMsg]);
@@ -137,7 +141,7 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
         const botMsg = {
           sender: 'bot',
           text: data.llm_response,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          time: getDisplayTime(currentStep)
         };
         setMessages(prev => [...prev, botMsg]);
       } else {
@@ -222,7 +226,12 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
 
                 <div className={`${styles.messageBubble} ${msg.sender === 'user' ? styles.userBubble : styles.botBubble}`}>
                   <div className={styles.messageText} style={{ whiteSpace: 'pre-wrap' }}>
-                    {msg.text}
+                    {msg.text.split(/(\*\*.*?\*\*)/g).map((part, idx) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        return <strong key={idx} style={{ color: '#38bdf8' }}>{part.slice(2, -2)}</strong>;
+                      }
+                      return part;
+                    })}
                   </div>
                   <div className={styles.messageTime}>{msg.time}</div>
                 </div>

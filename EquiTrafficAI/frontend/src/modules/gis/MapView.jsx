@@ -88,7 +88,7 @@ export default function MapView() {
   useEffect(() => {
     const fetch15MinWarnings = async () => {
       try {
-        const response = await fetch(`/api/predict/congestion_15min?city=${selectedCity}`);
+        const response = await fetch(`/api/predict/congestion_15min?city=${selectedCity}&timestamp_index=${step}`);
         if (response.ok) {
           const data = await response.json();
           setUpcoming15MinWarnings(data.congested_nodes || []);
@@ -340,12 +340,12 @@ export default function MapView() {
             />
           ))}
 
-          {/* HIGHLIGHTED RECOMMENDED ROUTE EDGES (Neon Green / Cyan) */}
+          {/* HIGHLIGHTED RECOMMENDED ROUTE EDGES (Clean Neon Cyan Path) */}
           {routeResult && routeResult.recommended_path_coords && routeResult.recommended_path_coords.map((pair, idx) => (
             <Polyline
               key={`rec-${idx}`}
               positions={pair}
-              pathOptions={{ color: '#00ffcc', weight: 6, opacity: 0.95 }}
+              pathOptions={{ color: '#00e5ff', weight: 4, opacity: 0.9 }}
             />
           ))}
 
@@ -354,29 +354,35 @@ export default function MapView() {
             <Polyline
               key={`avoid-${idx}`}
               positions={pair}
-              pathOptions={{ color: '#ff0055', weight: 5, dashArray: '8, 8', opacity: 0.95 }}
+              pathOptions={{ color: '#ff0055', weight: 4, dashArray: '6, 6', opacity: 0.95 }}
             />
           ))}
 
-          {nodes.map(node => (
-            <CircleMarker
-              key={`${node.id}-${node.color}`}
-              center={[node.lat, node.lon]}
-              radius={selectedNodeId === node.id ? 9 : (originNodeId === node.id || destinationNodeId === node.id ? 8 : 6)}
-              pathOptions={{
-                fillColor: originNodeId === node.id ? '#00ffcc' : (destinationNodeId === node.id ? '#ff0055' : (node.color || '#2ecc71')),
-                color: '#ffffff',
-                weight: (selectedNodeId === node.id || originNodeId === node.id || destinationNodeId === node.id) ? 3 : 1,
-                opacity: 0.9,
-                fillOpacity: 0.95
-              }}
-              eventHandlers={{
-                click: () => {
-                  setSelectedNodeId(node.id);
-                  runLlmQuery(`Which way to avoid & use if starting now for ${node.location_label || ('Sensor #' + node.sensor_id)}?`);
-                }
-              }}
-            >
+          {nodes.map(node => {
+            const isWarnedInFuture = isFutureVisionActive && upcoming15MinWarnings.some(w => w.id === node.id || w.sensor_id === node.sensor_id);
+            const isOrigin = originNodeId === node.id;
+            const isDest = destinationNodeId === node.id;
+            const isSelected = selectedNodeId === node.id;
+
+            return (
+              <CircleMarker
+                key={`${node.id}-${node.color}-${isWarnedInFuture}`}
+                center={[node.lat, node.lon]}
+                radius={isSelected ? 9 : (isOrigin || isDest || isWarnedInFuture ? 9 : 6)}
+                pathOptions={{
+                  fillColor: isOrigin ? '#00ffcc' : (isDest ? '#ff0055' : (isWarnedInFuture ? '#ef4444' : (node.color || '#2ecc71'))),
+                  color: isWarnedInFuture ? '#a855f7' : (isSelected || isOrigin || isDest ? '#ffffff' : '#1e293b'),
+                  weight: isWarnedInFuture ? 4 : (isSelected || isOrigin || isDest ? 3 : 1),
+                  opacity: 0.95,
+                  fillOpacity: isWarnedInFuture ? 1.0 : 0.85
+                }}
+                eventHandlers={{
+                  click: () => {
+                    setSelectedNodeId(node.id);
+                    runLlmQuery(`Which way to avoid & use if starting now for ${node.location_label || ('Sensor #' + node.sensor_id)}?`);
+                  }
+                }}
+              >
               <Popup>
                 <div style={{ fontSize: '11px', color: '#0f172a', padding: '2px' }}>
                   <strong style={{ color: '#0284c7' }}>Sensor #{node.sensor_id || node.id}</strong><br/>
@@ -407,7 +413,8 @@ export default function MapView() {
                 </div>
               </Popup>
             </CircleMarker>
-          ))}
+            );
+          })}
         </MapContainer>
         
         {/* Map Legend Floating */}
@@ -607,55 +614,6 @@ export default function MapView() {
             </div>
           </div>
         </div>
-
-        {/* EquiTraffic-GPT LLM Causal Copilot Card */}
-        <div className={styles.card} style={{ borderColor: 'rgba(56, 189, 248, 0.5)', background: 'linear-gradient(180deg, #0f172a, #111c35)' }}>
-          <div className={styles.cardTitle} style={{ color: '#38bdf8' }}>
-            <Bot size={16} color="#38bdf8" />
-            <span>EquiTraffic-GPT Reroute Copilot</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-            <input 
-              type="text" 
-              placeholder={`Ask which way to avoid near ${selectedNode ? (selectedNode.location_label || ('Sensor #' + selectedNode.id)) : 'corridor'}...`}
-              value={llmPrompt}
-              onChange={(e) => setLlmPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && runLlmQuery()}
-              className={styles.headerSelect}
-              style={{ flex: 1, fontSize: '11px', padding: '6px 10px' }}
-            />
-            <button 
-              onClick={() => runLlmQuery()}
-              className={styles.btn}
-              style={{ backgroundColor: '#0284c7', padding: '6px 10px', width: 'auto' }}
-              disabled={isLlmLoading}
-            >
-              <Send size={12} />
-            </button>
-          </div>
-
-          {isLlmLoading ? (
-            <div style={{ fontSize: '11px', color: '#38bdf8', fontStyle: 'italic', padding: '8px' }}>
-              🤖 Comparing live speeds against historical same-time baselines...
-            </div>
-          ) : llmResponse ? (
-            <div className={styles.logBox} style={{ borderColor: '#38bdf8', maxHeight: '180px' }}>
-              <div className={styles.logText} style={{ color: '#f8fafc', whiteSpace: 'pre-wrap' }}>
-                {llmResponse}
-              </div>
-            </div>
-          ) : (
-            <button 
-              onClick={() => runLlmQuery()}
-              className={styles.btn}
-              style={{ backgroundColor: '#0284c7', fontSize: '11px', width: '100%', marginTop: '4px' }}
-            >
-              🤖 Ask Which Way to Avoid & Reroute
-            </button>
-          )}
-        </div>
-
       </div>
     </div>
   );

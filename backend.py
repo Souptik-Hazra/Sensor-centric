@@ -7,8 +7,12 @@ import numpy as np
 import pandas as pd
 from llm_engine import llm_engine
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-data_dir = os.path.join(base_dir, '..', 'data')
+data_dir_candidates = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "EquiTrafficAI", "data")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
+]
+data_dir = next((c for c in data_dir_candidates if os.path.exists(c)), data_dir_candidates[0])
 
 # Load location maps
 la_location_map = {}
@@ -587,6 +591,20 @@ def llm_causal_reasoning(req: LLMQueryRequest):
         "gwnet_forecast_horizon": "15-min",
         "location": selected_sensor.get("location_label", "")
     }
+
+# Unified Single-Server Serving: Serve built React Web GIS Application natively
+from fastapi.staticfiles import StaticFiles
+
+dist_candidates = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "EquiTrafficAI", "frontend", "dist")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend", "dist"))
+]
+for candidate in dist_candidates:
+    if os.path.exists(candidate):
+        app.mount("/", StaticFiles(directory=candidate, html=True), name="static")
+        print(f"[OK] Single-Server Mode Active: Serving React Web GIS from {candidate}")
+        break
 
 if __name__ == "__main__":
     import uvicorn

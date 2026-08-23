@@ -50,7 +50,24 @@ const AnalyticsView = () => {
     return points.join(' ');
   };
 
-  const paretoPoints = [
+  const [analyticsData, setAnalyticsData] = useState(null);
+
+  useEffect(() => {
+    const fetchAnalyticsMetrics = async () => {
+      try {
+        const res = await fetch(`/api/analytics/metrics?city=${selectedCity}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAnalyticsData(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch analytics metrics:", err);
+      }
+    };
+    fetchAnalyticsMetrics();
+  }, [selectedCity]);
+
+  const paretoPoints = analyticsData?.pareto_matrix || [
     { strategy: "DCRNN Baseline", mae: 2.77, rsf: 0.38, color: "#ef4444", status: "DOMINATED" },
     { strategy: "FairSTG Baseline", mae: 2.45, rsf: 0.28, color: "#f59e0b", status: "SUB-OPTIMAL" },
     { strategy: "GWNet (Suburban Equity)", mae: 2.15, rsf: 0.14, color: "#a855f7", status: "PARETO OPTIMAL" },

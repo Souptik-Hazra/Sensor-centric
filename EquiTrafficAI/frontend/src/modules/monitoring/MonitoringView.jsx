@@ -50,7 +50,7 @@ const MonitoringView = () => {
                   <td>{data ? `${data.speed} mph` : 'Loading...'}</td>
                   <td>{data ? getStatusBadge(data.status) : '-'}</td>
                   <td style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                    {sensor.lat.toFixed(4)}, {sensor.lng.toFixed(4)}
+                    {(sensor.lat || 34.05).toFixed(4)}, {(sensor.lon || sensor.lng || -118.24).toFixed(4)}
                   </td>
                 </tr>
               );
