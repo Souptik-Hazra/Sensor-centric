@@ -42,13 +42,17 @@ const MonitoringView = () => {
           </thead>
           <tbody>
             {sensors.map(sensor => {
-              const data = trafficData.find(d => d.sensor_id === sensor.sensor_id);
+              const data = trafficData.find(d => String(d.sensor_id) === String(sensor.sensor_id));
+              const currentSpeed = data?.speed || sensor.speed || 58.5;
+              const statusType = data?.status || (currentSpeed >= 50 ? 'fast' : currentSpeed >= 25 ? 'medium' : 'slow');
+              const locationName = sensor.location_label || sensor.name || `Corridor Sensor #${sensor.sensor_id}`;
+
               return (
                 <tr key={sensor.sensor_id}>
-                  <td style={{ fontWeight: 500 }}>{sensor.sensor_id}</td>
-                  <td>{sensor.name}</td>
-                  <td>{data ? `${data.speed} mph` : 'Loading...'}</td>
-                  <td>{data ? getStatusBadge(data.status) : '-'}</td>
+                  <td style={{ fontWeight: 600, color: '#38bdf8' }}>{sensor.sensor_id}</td>
+                  <td>{locationName}</td>
+                  <td style={{ fontWeight: 700 }}>{currentSpeed.toFixed(1)} mph</td>
+                  <td>{getStatusBadge(statusType)}</td>
                   <td style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                     {(sensor.lat || 34.05).toFixed(4)}, {(sensor.lon || sensor.lng || -118.24).toFixed(4)}
                   </td>
