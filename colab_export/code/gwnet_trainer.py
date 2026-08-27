@@ -146,13 +146,18 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
                 val_preds.append(out.cpu().numpy())
                 val_targets.append(y_b.cpu().numpy())
 
-        avg_val_mae = val_loss / len(val_loader)
-        val_mae_mph = avg_val_mae * speed_std
-
         val_preds_arr = np.concatenate(val_preds, axis=0)
         val_targets_arr = np.concatenate(val_targets, axis=0)
-        r2 = calculate_r2_score(torch.tensor(val_preds_arr), torch.tensor(val_targets_arr))
+
+        # Un-normalize Z-scores to calculate true physical speeds in MPH
+        real_preds_mph = val_preds_arr * speed_std + speed_mean
+        real_targets_mph = val_targets_arr * speed_std + speed_mean
+
+        true_mae_mph = float(np.mean(np.abs(real_preds_mph - real_targets_mph)))
+        r2 = calculate_r2_score(torch.tensor(real_preds_mph), torch.tensor(real_targets_mph))
         epoch_sec = time.time() - t0
+
+        print(f"Epoch {epoch:2d} | Train: {avg_train_mae:.4f} | Val Loss: {avg_val_mae:.4f} | Val MAE: {true_mae_mph:.2f} mph | R²: {r2:.4f} | {epoch_sec:.2f} s", end="")
 
         if avg_val_mae < best_val_mae:
             best_val_mae = avg_val_mae
