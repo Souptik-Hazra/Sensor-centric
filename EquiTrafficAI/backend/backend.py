@@ -34,7 +34,14 @@ if os.path.exists(sd_loc_path):
     with open(sd_loc_path, 'r') as f:
         sd_location_map = json.load(f)
 
-app = FastAPI(title="EquiTraffic-GPT API")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_all_data()
+    yield
+
+app = FastAPI(title="EquiTraffic-GPT API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -236,10 +243,6 @@ def load_all_data():
     state_data["pems07"] = generate_synthetic_pems_topology(883, 34.0522, -118.2437, "pems07") # LA Greater Region
 
     print("[+] Universal PeMS Datasets Ready: METR-LA (207), SD400 (716), PeMS04 (307), PeMS08 (170), PeMS-BAY (325), PeMS03 (358), PeMS07 (883).")
-
-@app.on_event("startup")
-def startup():
-    load_all_data()
 
 @app.get("/api/state")
 def get_state(city: str = Query("la")):
