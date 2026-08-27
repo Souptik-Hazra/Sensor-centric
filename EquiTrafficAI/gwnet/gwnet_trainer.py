@@ -43,7 +43,7 @@ def load_model_config() -> dict:
     return {}
 
 
-def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, lr=None, stride=None, use_amp=False, resume=False, version=None, use_compile=False, use_attn=True):
+def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, lr=None, stride=None, use_amp=False, resume=False, version=None, use_compile=False, use_attn=True, patience=15, beta=0.0):
     print("=================================================================")
     print(f"   EQUITRAFFIC-GPT SOTA MLOPS TRAINER ({dataset_name.upper()}) ")
     print("=================================================================")
@@ -102,7 +102,8 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
     model = torch.compile(raw_model) if use_compile and hasattr(torch, 'compile') else raw_model
 
     loss_cfg = gnn_cfg.get('loss', {})
-    criterion = SmartRerouteLoss(alpha=loss_cfg.get('alpha', 3.0), beta=loss_cfg.get('beta', 1.5), speed_threshold_norm=threshold_norm)
+    actual_beta = beta if beta is not None else loss_cfg.get('beta', 0.0)
+    criterion = SmartRerouteLoss(alpha=loss_cfg.get('alpha', 3.0), beta=actual_beta, speed_threshold_norm=threshold_norm)
     optimizer = optim.Adam(raw_model.parameters(), lr=lr, weight_decay=gnn_cfg.get('training', {}).get('weight_decay', 1e-4))
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=gnn_cfg.get('training', {}).get('eta_min', 1e-5))
 
@@ -110,6 +111,7 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
     print(f"[+] MLOps Registry: Target Version Allocated -> '{version_str}' ({num_nodes} Nodes)")
 
     best_val_mae = float('inf')
+    patience_counter = 0
     start_total_time = time.time()
 
     for epoch in range(1, num_epochs + 1):
@@ -158,10 +160,9 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
         r2 = calculate_r2_score(torch.tensor(real_preds_mph), torch.tensor(real_targets_mph))
         epoch_sec = time.time() - t0
 
-        print(f"Epoch {epoch:2d} | Train: {avg_train_mae:.4f} | Val Loss: {avg_val_mae:.4f} | Val MAE: {true_mae_mph:.2f} mph | R²: {r2:.4f} | {epoch_sec:.2f} s", end="")
-
         if avg_val_mae < best_val_mae:
             best_val_mae = avg_val_mae
+            patience_counter = 0
             versioned_dir = os.path.join(base_dir, "checkpoints", version_str, dataset_name)
             os.makedirs(versioned_dir, exist_ok=True)
             
@@ -182,11 +183,16 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
             register_model_version(dataset_name, version_str, versioned_pt_path, versioned_tar_path, metrics, hparams)
             status = f"[SAVED {version_str}]"
         else:
-            status = ""
+            patience_counter += 1
+            status = f"[Patience {patience_counter}/{patience}]"
 
         log_msg = f"Epoch {epoch:<3} | Train: {avg_train_mae:<6.4f} | Val Norm: {avg_val_mae:<6.4f} | Val MPH: {true_mae_mph:<6.2f}mph | R²: {r2:<6.4f} | {epoch_sec:<6.2f}s | {status}\n"
         sys.stdout.write(log_msg)
         sys.stdout.flush()
+
+        if patience_counter >= patience:
+            print(f"\n[🛑 EARLY STOPPING] Validation loss did not improve for {patience} consecutive epochs. Triggered Early Stopping at Epoch {epoch}!")
+            break
 
     total_sec = time.time() - start_total_time
     print(f"\n[+] Total SOTA Accelerated Training Time ({num_epochs} Epochs): {total_sec / 60.0:.2f} minutes!")

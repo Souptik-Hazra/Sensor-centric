@@ -92,7 +92,7 @@ def register_model_version(dataset_name: str, version_str: str, pt_path: str, ta
         "hyperparameters": hparams
     }
     save_registry(reg)
-    print(f"[+] MLOps Model Registry: Registered version '{version_str}' for dataset '{dataset_name.upper()}' in model_registry.json")
+    print(f"\n[+] MLOps Model Registry: Registered version '{version_str}' for dataset '{dataset_name.upper()}' in model_registry.json")
 
 
 def get_active_checkpoint(dataset_name: str) -> str:
