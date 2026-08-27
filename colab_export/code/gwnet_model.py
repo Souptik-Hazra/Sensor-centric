@@ -151,7 +151,10 @@ class GraphWaveNet(nn.Module):
 
     def forward(self, input):
         in_len = input.size(3)
-        x = input[:, :, :, -self.receptive_field:] if in_len > self.receptive_field else input
+        if in_len < self.receptive_field:
+            x = F.pad(input, (self.receptive_field - in_len, 0))
+        else:
+            x = input[:, :, :, -self.receptive_field:]
 
         device_supports = [sup.to(input.device) for sup in self.supports]
 
