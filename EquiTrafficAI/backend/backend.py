@@ -117,6 +117,22 @@ def load_all_data():
         df_c = pd.read_csv(ctf_csv)
         state_data["causal"] = dict(zip(df_c['pathway'], df_c['estimate']))
         
+    # 2.5 Preload Neural Forecast Sequence Tensors (.npz) into Memory
+    la_npz = os.path.join(data_dir, 'metr_la_his.npz')
+    sd_npz = os.path.join(data_dir, 'sd400_his.npz')
+    if os.path.exists(la_npz):
+        try:
+            state_data["his_npz_la"] = np.load(la_npz)["data"]
+            print(f"[+] Loaded METR-LA tensor history shape {state_data['his_npz_la'].shape} in memory.")
+        except Exception as e:
+            print(f"[!] METR-LA npz load error: {e}")
+    if os.path.exists(sd_npz):
+        try:
+            state_data["his_npz_sd"] = np.load(sd_npz)["data"]
+            print(f"[+] Loaded SD400 tensor history shape {state_data['his_npz_sd'].shape} in memory.")
+        except Exception as e:
+            print(f"[!] SD400 npz load error: {e}")
+
     # 3. Load METR-LA (207 Sensors)
     la_metrics = os.path.join(data_dir, 'metr_la_metrics.csv')
     la_locs = os.path.join(data_dir, 'sensor_locations.csv')
@@ -272,29 +288,23 @@ def predict_congestion_15min(city: str = Query("la"), timestamp_index: int = Que
     city_data = state_data.get(city_key, state_data["la"])
     sensors = city_data.get("sensors", [])
     
-    # Load authentic sample tensor history (.npz)
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    npz_filename = "metr_la_his.npz" if city_key == "la" else "sd400_his.npz"
-    npz_path = os.path.join(base_dir, "data", npz_filename)
+    # Use in-memory preloaded sample tensor history (.npz)
+    his_data = state_data.get("his_npz_sd") if city_key == "sd" else state_data.get("his_npz_la")
 
     predicted_15min_speeds = {}
-    if os.path.exists(npz_path):
+    if his_data is not None:
         try:
-            his_data = np.load(npz_path)["data"] # Shape (T, N, 3)
             T_max = his_data.shape[0]
-            # Take 12-interval input slice at timestamp_index
             start_idx = max(0, min(T_max - 24, timestamp_index))
-            # Real 15-min future slice (3 steps ahead = +15 mins)
-            future_15min_slice = his_data[start_idx + 3, :, 0] # (N,)
+            future_15min_slice = his_data[start_idx + 3, :, 0]
             for idx, s in enumerate(sensors):
                 if idx < len(future_15min_slice):
                     val = float(future_15min_slice[idx])
-                    # If speed values normalized, scale to mph
                     if val < 5.0 and val > -5.0:
                         val = max(10.0, min(75.0, 58.0 + (val * 12.5)))
                     predicted_15min_speeds[s.get("id")] = round(val, 1)
         except Exception as e:
-            print(f"[!] Real 15-min neural forecast sample load error: {e}")
+            print(f"[!] Real 15-min neural forecast sample error: {e}")
 
     congested_nodes = []
     for s in sensors:
