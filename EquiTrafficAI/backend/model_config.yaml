@@ -1,0 +1,82 @@
+# ==============================================================================
+# EquiTrafficAI - Deep Learning GNN & Traffic LLM Engine Configuration
+# ==============================================================================
+
+graph_wavenet_gnn:
+  model_name: "GraphWaveNet_AdaptiveAdjacency"
+  input_dimensions: 3 # [speed, time_of_day, day_of_week]
+  output_horizons:
+    short_horizon_min: 15 # 3 timesteps
+    medium_horizon_min: 30 # 6 timesteps
+    long_horizon_min: 60 # 12 timesteps
+  architecture:
+    num_nodes_metr_la: 207
+    num_nodes_sd400: 716
+    adaptive_adj_embedding_dim: 10
+    gcn_depth: 2
+    dropout: 0.3
+    spatial_kernel_size: 2
+    temporal_kernel_size: 2
+  benchmarks:
+    gwnet_mae_15min: 2.15
+    gwnet_mae_30min: 2.89
+    gwnet_mae_60min: 3.61
+    dcrnn_mae_baseline: 2.77
+    fairstg_mae_baseline: 2.45
+
+causal_scm_decomposition:
+  framework: "Controlled Direct & Indirect Effect (SCM)"
+  direct_effect_pct: 21.4 # Ctf_DE = 21.4%
+  indirect_effect_reliability_pct: 61.3 # Ctf_IE_R = 61.3%
+  mediation_formula: "Total_Disparity = Ctf_DE + Ctf_IE_R + Residual"
+  reliability_variants:
+    - name: "reliability_equal"
+      description: "Suburban Equity Priority (Equal Sensor Reliability Weighting)"
+      target_rsf: 0.14
+    - name: "reliability_pca"
+      description: "Maximum Throughput Priority (PCA Eigen-Reliability Weighting)"
+      target_rsf: 0.22
+    - name: "reliability_original"
+      description: "Baseline Uncalibrated Sensor Reliability"
+      target_rsf: 0.38
+
+pareto_frontier_optimizer:
+  objectives:
+    primary_loss: "MAE (Mean Absolute Error)"
+    secondary_disparity: "RSF (Regional Severity Fairness / Disparity)"
+  pareto_points:
+    - strategy: "DCRNN Baseline"
+      mae: 2.77
+      rsf: 0.38
+      status: "DOMINATED"
+    - strategy: "FairSTG Baseline"
+      mae: 2.45
+      rsf: 0.28
+      status: "SUB-OPTIMAL"
+    - strategy: "GWNet (Suburban Equity)"
+      mae: 2.15
+      rsf: 0.14
+      status: "PARETO_OPTIMAL"
+    - strategy: "GWNet (Max Throughput)"
+      mae: 1.82
+      rsf: 0.22
+      status: "PARETO_OPTIMAL"
+
+traffic_llm_engine:
+  provider: "Google Gemini API"
+  primary_model: "gemini-2.5-flash-lite"
+  fallback_model: "gemini-1.5-flash"
+  timeout_seconds: 8.0
+  temperature: 0.2
+  max_output_tokens: 512
+  proactive_alerts:
+    interval_timesteps: 3 # Every 15 minutes
+    trigger_speed_drop_threshold_mph: 15.0
+  prompt_templates:
+    causal_reroute_system_prompt: |
+      You are EquiTraffic-GPT Smart Reroute Copilot, powered by Gemini Flash 2.5 Lite.
+      Compare current highway speeds against historical same-day baselines for {time_label}.
+      Provide actionable rerouting advice with 3 sections:
+      1. Pattern Analysis vs Historical Baseline
+      2. Specific Freeway Paths to Avoid
+      3. Recommended Alternate Reroutes & Estimated Time Saved.

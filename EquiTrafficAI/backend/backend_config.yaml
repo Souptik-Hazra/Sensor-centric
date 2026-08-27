@@ -1,0 +1,58 @@
+# ==============================================================================
+# EquiTrafficAI - FastAPI Master Backend Server Configuration
+# ==============================================================================
+
+server:
+  app_name: "EquiTraffic-GPT Master API"
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  reload: false
+  cors_allowed_origins:
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"
+    - "http://localhost:3000"
+
+datasets:
+  data_directory_candidates:
+    - "./data"
+    - "../data"
+    - "./EquiTrafficAI/data"
+  active_corridors:
+    la:
+      name: "Los Angeles METR-LA"
+      sensor_count: 207
+      metadata_file: "metr_la_metrics.csv"
+      history_file: "his.npz"
+      distance_matrix: "distances.csv"
+      location_map: "la_sensor_location_map.json"
+    sd:
+      name: "San Diego SD400"
+      sensor_count: 716
+      metadata_file: "sd_meta.csv"
+      location_map: "sd_sensor_location_map.json"
+    pems04:
+      name: "SF Bay Area PeMS-04"
+      sensor_count: 307
+    pems08:
+      name: "San Bernardino PeMS-08"
+      sensor_count: 170
+    pems_bay:
+      name: "Bay Area PeMS-BAY"
+      sensor_count: 325
+
+routing_engine:
+  max_search_depth: 15
+  free_flow_speed_mph: 65.0
+  heavy_congestion_speed_mph: 22.5
+  reroute_time_saved_multiplier: 1.25
+
+anomaly_detection:
+  cusum_threshold: 3.5
+  ewma_alpha: 0.2
+  persistence_error_window: 12
+  zero_rate_threshold: 0.40
+
+caching:
+  enable_in_memory_cache: true
+  cache_ttl_seconds: 3600

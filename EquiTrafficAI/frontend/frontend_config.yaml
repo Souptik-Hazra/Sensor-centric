@@ -1,0 +1,64 @@
+# ==============================================================================
+# EquiTrafficAI - Frontend React & Web GIS Engine Configuration
+# ==============================================================================
+
+app:
+  name: "EquiTraffic-GPT Traffic Digital Twin"
+  version: "2.0.0"
+  environment: "production"
+  base_url: "http://localhost:5173"
+
+server:
+  host: "127.0.0.1"
+  port: 5173
+  proxy:
+    api_prefix: "/api"
+    target: "http://127.0.0.1:8000"
+    change_origin: true
+
+build:
+  target: "es2022"
+  chunk_size_warning_limit_kb: 1200
+  minify: "terser"
+  css_code_split: true
+  manual_chunks:
+    vendor_leaflet: ["leaflet", "react-leaflet"]
+    vendor_icons: ["lucide-react"]
+    vendor_react: ["react", "react-dom", "react-router-dom", "zustand"]
+
+gis_engine:
+  default_city: "la"
+  tile_layer_url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+  prefer_canvas: true # High-performance GPU rendering for 700+ sensors
+  default_zoom:
+    la: 11
+    sd: 10
+    pems04: 11
+  default_center:
+    la: [34.0522, -118.2437]
+    sd: [32.7157, -117.1611]
+
+playback_engine:
+  total_timesteps: 288
+  step_minutes: 5
+  default_step: 96 # 08:00 AM
+  speed_multipliers: [1, 5, 10, 60]
+  default_speed: 10
+
+design_system:
+  theme: "dark"
+  primary_color: "#0284c7"
+  cyan_accent: "#00ffcc"
+  sky_brand: "#38bdf8"
+  purple_accent: "#9333ea"
+  status_colors:
+    clear: "#2ecc71"
+    moderate: "#f1c40f"
+    congested: "#e74c3c"
+    zero_flow: "#38bdf8"
+
+features:
+  future_vision_mode: true
+  smart_reroute_planner: true
+  proactive_15min_alerts: true
+  pareto_policy_advisor: true
