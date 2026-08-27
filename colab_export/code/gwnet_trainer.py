@@ -146,6 +146,7 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
                 val_preds.append(out.cpu().numpy())
                 val_targets.append(y_b.cpu().numpy())
 
+        avg_val_mae = val_loss / len(val_loader)
         val_preds_arr = np.concatenate(val_preds, axis=0)
         val_targets_arr = np.concatenate(val_targets, axis=0)
 
