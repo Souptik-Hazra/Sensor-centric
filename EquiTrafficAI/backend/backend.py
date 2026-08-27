@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import sys
 import os
 import json
+import requests
 import numpy as np
 import pandas as pd
 
@@ -515,14 +516,15 @@ def plan_smart_route(req: RouteRequest):
 def causal_diagnose(sensor_id: int):
     causal_info = state_data.get("causal", {})
     neighbors_map = state_data.get("graph_neighbors", {})
-    downstream_nodes = neighbors_map.get(sensor_id, [sensor_id + 1, sensor_id + 2])[:3]
+    safe_sid = max(0, sensor_id)
+    downstream_nodes = neighbors_map.get(safe_sid, [safe_sid + 1, safe_sid + 2])[:3]
     downstream_str = ", ".join([f"Node #{n}" for n in downstream_nodes]) if downstream_nodes else "Downstream Corridor"
 
     return {
-        "sensor_id": sensor_id,
-        "diagnosis": f"Sensor #{sensor_id} Causal Diagnosis",
+        "sensor_id": safe_sid,
+        "diagnosis": f"Sensor #{safe_sid} Causal Diagnosis",
         "downstream_neighbors": downstream_nodes,
-        "causal_explanation": f"CAP-D Diagnostic for Sensor #{sensor_id}: Tracing spatial edges to {downstream_str} within 15–30 minutes."
+        "causal_explanation": f"CAP-D Diagnostic for Sensor #{safe_sid}: Tracing spatial edges to {downstream_str} within 15–30 minutes."
     }
 
 # Feature 4: Policy Advisor
