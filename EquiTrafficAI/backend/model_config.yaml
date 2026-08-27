@@ -4,19 +4,82 @@
 
 graph_wavenet_gnn:
   model_name: "GraphWaveNet_AdaptiveAdjacency"
+  version: "2.0.0"
   input_dimensions: 3 # [speed, time_of_day, day_of_week]
   output_horizons:
     short_horizon_min: 15 # 3 timesteps
     medium_horizon_min: 30 # 6 timesteps
     long_horizon_min: 60 # 12 timesteps
+
   architecture:
     num_nodes_metr_la: 207
     num_nodes_sd400: 716
+    num_nodes_pems04: 307
+    num_nodes_pems08: 170
+    num_nodes_pems_bay: 325
+    num_nodes_pems03: 358
+    num_nodes_pems07: 883
     adaptive_adj_embedding_dim: 10
     gcn_depth: 2
     dropout: 0.3
     spatial_kernel_size: 2
     temporal_kernel_size: 2
+    residual_channels: 32
+    dilation_channels: 32
+    skip_channels: 256
+    end_channels: 512
+
+  serving:
+    adapter_class: "UniversalPeMSAdapter"
+    torch_inference_mode: true
+    strict_weight_loading: false
+    device: "auto" # 'cuda' if available else 'cpu'
+
+  training:
+    default_epochs: 50
+    default_batch_size: 64
+    default_learning_rate: 0.001
+    default_stride: 2
+    weight_decay: 0.0001
+    eta_min: 0.00001
+    max_grad_norm: 5.0
+    bottleneck_threshold_mph: 25.0
+
+  loss:
+    alpha: 3.0
+    beta: 1.5
+    default_speed_threshold_norm: -1.5
+
+  dataset_catalog:
+    metr_la:
+      display_name: "METR-LA (Los Angeles)"
+      num_nodes: 207
+      in_dim: 3
+      out_dim: 1
+      horizon: 12
+      skip_channels: 256
+      end_channels: 512
+      adj_filename: "adj_metr_la.pkl"
+      his_filename: "metr_la_his.npz"
+    sd400:
+      display_name: "SD400 (San Diego)"
+      num_nodes: 716
+      in_dim: 3
+      out_dim: 12
+      horizon: 12
+      skip_channels: 64
+      end_channels: 128
+      adj_filename: "adj_sd400.pkl"
+      his_filename: "sd400_his.npz"
+    pems04:
+      display_name: "PeMS04 (SF Bay Area)"
+      num_nodes: 307
+      in_dim: 3
+      out_dim: 1
+      horizon: 12
+      skip_channels: 256
+      end_channels: 512
+
   benchmarks:
     gwnet_mae_15min: 2.15
     gwnet_mae_30min: 2.89

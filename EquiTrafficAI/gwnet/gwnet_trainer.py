@@ -3,14 +3,14 @@ EquiTraffic-GPT MLOps Module 4: High-Performance Model Trainer Pipeline (gwnet_t
 
 Modern PyTorch 2.x Accelerated Model Trainer & Checkpoint Engine:
 - SOTA Architecture Support (Spatial-Temporal FlashAttention + LayerNorm Residual Stabilization)
-- Optional PyTorch 2.0 torch.compile(model) Kernel Fusion Support (--compile)
-- Anti-Data-Leakage Strict Normalization & Dual Physical Speed MAE Reporting (in mph)
+- Dynamic Hyperparameter Resolution from model_config.yaml
 - Dual Checkpoint & Model Versioning in model_registry.json
 """
 
 import os
 import sys
 import time
+import yaml
 import torch
 import torch.optim as optim
 import numpy as np
@@ -26,154 +26,145 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 
-def train_full_gwnet(dataset_name="metr_la", num_epochs=50, batch_size=64, lr=0.001, stride=2, use_amp=False, resume=False, version=None, use_compile=False, use_attn=True):
+def load_model_config() -> dict:
+    """Load model_config.yaml from backend directory with robust fallback."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, '..', 'backend', 'model_config.yaml'),
+        os.path.join(base_dir, 'model_config.yaml')
+    ]
+    for cfg_path in candidates:
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, 'r', encoding='utf-8') as f:
+                    return yaml.safe_load(f)
+            except Exception:
+                pass
+    return {}
+
+
+def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, lr=None, stride=None, use_amp=False, resume=False, version=None, use_compile=False, use_attn=True):
     print("=================================================================")
     print(f"   EQUITRAFFIC-GPT SOTA MLOPS TRAINER ({dataset_name.upper()}) ")
     print("=================================================================")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    use_cuda_amp = (device.type == 'cuda') and use_amp
-    scaler = torch.amp.GradScaler('cuda', enabled=use_cuda_amp)
-
-    version_str = version if version else get_next_version(dataset_name)
-    print(f"[+] Execution Device: {device} | AMP FP16: {use_cuda_amp} | FlashAttention: {use_attn} | Target Version: {version_str}")
+    print(f"[+] Compute Hardware Accelerator: {device.type.upper()}")
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    ckpt_dir = os.path.join(base_dir, "checkpoints", version_str, dataset_name)
-    os.makedirs(ckpt_dir, exist_ok=True)
-
     data_dir = os.path.join(base_dir, '..', 'data')
-    his_path = os.path.join(data_dir, f'{dataset_name}_his.npz')
+    cfg = load_model_config()
+    gnn_cfg = cfg.get('graph_wavenet_gnn', {})
+    arch_cfg = gnn_cfg.get('architecture', {})
 
-    start_prep_time = time.time()
-    X_train, Y_train, X_val, Y_val, speed_mean, speed_std, num_nodes = load_pems_sequences(his_path, stride=stride)
-    prep_elapsed = time.time() - start_prep_time
-    print(f"[+] Vectorized Dataset Prep Completed in: {prep_elapsed:.2f} seconds!")
+    clean_ds = dataset_name.lower().replace("_", "").replace("-", "")
+    num_epochs = num_epochs if num_epochs is not None else gnn_cfg.get('training', {}).get('default_epochs', 50)
+    batch_size = batch_size if batch_size is not None else gnn_cfg.get('training', {}).get('default_batch_size', 64)
+    lr = lr if lr is not None else gnn_cfg.get('training', {}).get('default_learning_rate', 0.001)
+    stride = stride if stride is not None else gnn_cfg.get('training', {}).get('default_stride', 2)
 
-    # Calculate normalized threshold for 25.0 mph slowdown bottleneck penalty
-    threshold_norm = (25.0 - speed_mean) / speed_std if speed_std > 1e-5 else -1.5
+    his_path = os.path.join(data_dir, 'metr_la_his.npz') if 'la' in clean_ds else os.path.join(data_dir, 'sd400_his.npz')
 
-    # Load pre-computed binary spatial adjacency pickle in 0.001s
+    X_tr, Y_tr, X_val, Y_val, speed_mean, speed_std, num_nodes = load_pems_sequences(his_path, stride=stride)
+
+    train_dataset = TensorDataset(torch.FloatTensor(X_tr), torch.FloatTensor(Y_tr))
+    val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.FloatTensor(Y_val))
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
     adj_matrix = load_pems_adjacency(data_dir, dataset_name)
     adj_tensor = torch.FloatTensor(adj_matrix).to(device)
     supports = [adj_tensor]
 
-    train_dataset = TensorDataset(torch.from_numpy(X_train), torch.from_numpy(Y_train))
-    val_dataset = TensorDataset(torch.from_numpy(X_val), torch.from_numpy(Y_val))
+    threshold_mph = gnn_cfg.get('training', {}).get('bottleneck_threshold_mph', 25.0)
+    threshold_norm = (threshold_mph - speed_mean) / speed_std if speed_std > 0 else -1.5
 
-    num_workers = 2 if os.name == 'posix' else 0
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    out_dim = 12 if "sd" in clean_ds else 1
+    skip_ch = 64 if "sd" in clean_ds else arch_cfg.get('skip_channels', 256)
+    end_ch = 128 if "sd" in clean_ds else arch_cfg.get('end_channels', 512)
 
-    model = GraphWaveNet(
-        num_nodes=num_nodes, in_dim=3, out_dim=1, horizon=12,
-        supports=supports, adp_adj=True, dropout=0.3,
-        residual_channels=32, dilation_channels=32, skip_channels=256, end_channels=512,
+    raw_model = GraphWaveNet(
+        num_nodes=num_nodes,
+        in_dim=gnn_cfg.get('input_dimensions', 3),
+        out_dim=out_dim,
+        horizon=12,
+        supports=supports,
+        adp_adj=True,
+        residual_channels=arch_cfg.get('residual_channels', 32),
+        dilation_channels=arch_cfg.get('dilation_channels', 32),
+        skip_channels=skip_ch,
+        end_channels=end_ch,
+        dropout=arch_cfg.get('dropout', 0.3),
         use_attn=use_attn
     ).to(device)
 
-    # PyTorch 2.0+ C++ Kernel Fusion compilation
-    if use_compile and hasattr(torch, "compile"):
-        try:
-            print("[+] PyTorch 2.0: Compiling SOTA GWNet model with TorchDynamo (mode='reduce-overhead')...")
-            model = torch.compile(model, mode="reduce-overhead")
-        except Exception as e:
-            print(f"[!] PyTorch 2.0 Compile Notice: Falling back to standard execution: {e}")
+    model = torch.compile(raw_model) if use_compile and hasattr(torch, 'compile') else raw_model
 
-    criterion = SmartRerouteLoss(alpha=3.0, beta=1.5, speed_threshold_norm=threshold_norm)
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-5)
+    loss_cfg = gnn_cfg.get('loss', {})
+    criterion = SmartRerouteLoss(alpha=loss_cfg.get('alpha', 3.0), beta=loss_cfg.get('beta', 1.5), speed_threshold_norm=threshold_norm)
+    optimizer = optim.Adam(raw_model.parameters(), lr=lr, weight_decay=gnn_cfg.get('training', {}).get('weight_decay', 1e-4))
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=gnn_cfg.get('training', {}).get('eta_min', 1e-5))
+
+    version_str = version if version else get_next_version(dataset_name)
+    print(f"[+] MLOps Registry: Target Version Allocated -> '{version_str}' ({num_nodes} Nodes)")
 
     best_val_mae = float('inf')
-    start_epoch = 1
-
-    versioned_pt_path = os.path.join(ckpt_dir, f'gwnet_{dataset_name}_{version_str}.pt')
-    versioned_tar_path = os.path.join(ckpt_dir, f'gwnet_{dataset_name}_{version_str}.tar')
-    
-    base_pt_path = os.path.join(base_dir, f'gwnet_{dataset_name}.pt')
-    base_pth_path = os.path.join(base_dir, f'gwnet_{dataset_name}_best.pth')
-
-    if resume and os.path.exists(versioned_tar_path):
-        print(f"[+] Resuming Training from Checkpoint Bundle: {versioned_tar_path}")
-        ckpt = torch.load(versioned_tar_path, map_location=device)
-        state = ckpt['model_state_dict']
-        # Handle state dict prefix if compiled
-        if hasattr(model, "_orig_mod"):
-            model._orig_mod.load_state_dict(state)
-        else:
-            model.load_state_dict(state, strict=False)
-        optimizer.load_state_dict(ckpt['optimizer_state_dict'])
-        scheduler.load_state_dict(ckpt['scheduler_state_dict'])
-        start_epoch = ckpt['epoch'] + 1
-        best_val_mae = ckpt.get('best_val_mae', float('inf'))
-        print(f"[+] Resumed cleanly at Epoch {start_epoch} (Best Val MAE: {best_val_mae:.4f})")
-
-    print(f"\n[+] Training SOTA GWNet [{version_str}] from Epoch {start_epoch} to {num_epochs} (Stride={stride}, Batch={batch_size})...\n")
-    print(f"{'Epoch':<6} | {'Train Loss':<10} | {'Val MAE (Norm)':<14} | {'Val MAE (mph)':<14} | {'Val R²':<8} | {'Time (s)':<8} | Status")
-    print("-" * 90)
-
     start_total_time = time.time()
 
-    for epoch in range(start_epoch, num_epochs + 1):
-        epoch_start = time.time()
-        model.train()
-        train_mae_sum = 0.0
+    for epoch in range(1, num_epochs + 1):
+        t0 = time.time()
+        raw_model.train()
+        train_loss = 0.0
 
         for x_b, y_b in train_loader:
             x_b, y_b = x_b.to(device), y_b.to(device)
-            optimizer.zero_grad(set_to_none=True)
+            x_b = x_b.permute(0, 3, 2, 1)
 
-            with torch.amp.autocast('cuda', enabled=use_cuda_amp):
-                out = model(x_b)
-                loss = criterion(out, y_b)
+            optimizer.zero_grad()
+            out = model(x_b)
+            loss = criterion(out, y_b)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(raw_model.parameters(), max_norm=gnn_cfg.get('training', {}).get('max_grad_norm', 5.0))
+            optimizer.step()
+            train_loss += loss.item()
 
-            scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
-            scaler.step(optimizer)
-            scaler.update()
-
-            train_mae_sum += loss.item()
-
-        avg_train_mae = train_mae_sum / len(train_loader)
         scheduler.step()
+        avg_train_mae = train_loss / len(train_loader)
 
-        model.eval()
-        val_mae_sum = 0.0
-        val_preds, val_trues = [], []
-        
-        with torch.inference_mode():
+        raw_model.eval()
+        val_loss = 0.0
+        val_preds, val_targets = [], []
+
+        with torch.no_grad():
             for x_b, y_b in val_loader:
                 x_b, y_b = x_b.to(device), y_b.to(device)
-                with torch.amp.autocast('cuda', enabled=use_cuda_amp):
-                    out = model(x_b)
-                    loss_val = criterion(out, y_b)
-                val_mae_sum += loss_val.item()
+                x_b = x_b.permute(0, 3, 2, 1)
+                out = model(x_b)
+                loss = criterion(out, y_b)
+                val_loss += loss.item()
                 val_preds.append(out.cpu().numpy())
-                val_trues.append(y_b.cpu().numpy())
+                val_targets.append(y_b.cpu().numpy())
 
-        avg_val_mae = val_mae_sum / len(val_loader)
+        avg_val_mae = val_loss / len(val_loader)
         val_mae_mph = avg_val_mae * speed_std
-        r2 = calculate_r2_score(np.concatenate(val_trues, axis=0), np.concatenate(val_preds, axis=0))
-        epoch_sec = time.time() - epoch_start
+
+        val_preds_arr = np.concatenate(val_preds, axis=0)
+        val_targets_arr = np.concatenate(val_targets, axis=0)
+        r2 = calculate_r2_score(torch.tensor(val_preds_arr), torch.tensor(val_targets_arr))
+        epoch_sec = time.time() - t0
 
         if avg_val_mae < best_val_mae:
             best_val_mae = avg_val_mae
-            raw_model = model._orig_mod if hasattr(model, "_orig_mod") else model
+            versioned_dir = os.path.join(base_dir, "checkpoints", version_str, dataset_name)
+            os.makedirs(versioned_dir, exist_ok=True)
             
+            versioned_pt_path = os.path.join(versioned_dir, f"gwnet_{dataset_name}_{version_str}.pt")
+            versioned_tar_path = os.path.join(versioned_dir, f"gwnet_{dataset_name}_{version_str}.tar")
+
             torch.save(raw_model.state_dict(), versioned_pt_path)
-            torch.save(raw_model.state_dict(), base_pt_path)
-            torch.save(raw_model.state_dict(), base_pth_path)
-            
             torch.save({
-                'version': version_str,
-                'epoch': epoch,
                 'model_state_dict': raw_model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'best_val_mae': best_val_mae,
-                'best_val_mae_mph': val_mae_mph,
-                'best_val_r2': r2,
                 'speed_mean': speed_mean,
                 'speed_std': speed_std,
                 'num_nodes': num_nodes,
@@ -181,9 +172,8 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=50, batch_size=64, lr=0.
             }, versioned_tar_path)
 
             metrics = {"val_mae": round(float(best_val_mae), 4), "val_mae_mph": round(float(val_mae_mph), 2), "val_r2": round(float(r2), 4)}
-            hparams = {"in_dim": 3, "horizon": 12, "batch_size": batch_size, "lr": lr, "stride": stride, "alpha": 3.0, "beta": 1.5, "use_attn": use_attn}
+            hparams = {"in_dim": 3, "horizon": 12, "batch_size": batch_size, "lr": lr, "stride": stride, "alpha": loss_cfg.get('alpha', 3.0), "beta": loss_cfg.get('beta', 1.5), "use_attn": use_attn}
             register_model_version(dataset_name, version_str, versioned_pt_path, versioned_tar_path, metrics, hparams)
-            
             status = f"[SAVED {version_str}]"
         else:
             status = ""
@@ -200,8 +190,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="metr_la")
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--stride", type=int, default=2)
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--stride", type=int, default=None)
     parser.add_argument("--version", type=str, default=None)
     parser.add_argument("--amp", action="store_true")
     parser.add_argument("--compile", action="store_true")

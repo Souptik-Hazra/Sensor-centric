@@ -9,27 +9,62 @@ Contains spatial graph data loaders, distance matrix builders, and sequence buil
 
 import os
 import pickle
+import yaml
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 
+def load_model_config() -> dict:
+    """Load model_config.yaml from backend directory with robust fallback."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, '..', 'backend', 'model_config.yaml'),
+        os.path.join(base_dir, 'model_config.yaml')
+    ]
+    for cfg_path in candidates:
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, 'r', encoding='utf-8') as f:
+                    return yaml.safe_load(f)
+            except Exception:
+                pass
+    return {}
+
+
 def load_pems_adjacency(data_dir, dataset_name, sensor_ids=None):
     """
     Loads precomputed binary pickle spatial adjacency matrix in 0.001s.
-    Falls back to building from distances.csv if .pkl is missing.
+    Falls back to building from distances.csv or distances_{dataset_name}.csv if .pkl is missing.
     """
-    pkl_path = os.path.join(data_dir, f'adj_{dataset_name}.pkl')
-    if os.path.exists(pkl_path):
-        with open(pkl_path, 'rb') as f:
-            adj = pickle.load(f)
-            print(f"[+] Data Engineering: Loaded precomputed binary adjacency matrix '{os.path.basename(pkl_path)}' ({adj.shape[0]} nodes) in 0.001s.")
-            return adj
+    clean_ds = dataset_name.lower().replace("_", "").replace("-", "")
+    pkl_candidates = [
+        os.path.join(data_dir, f'adj_{dataset_name}.pkl'),
+        os.path.join(data_dir, f'{dataset_name}_adj.pkl'),
+        os.path.join(data_dir, f'adj_{clean_ds}.pkl'),
+        os.path.join(data_dir, 'metr_la_adj.pkl') if 'la' in clean_ds else os.path.join(data_dir, 'sd400_adj.pkl')
+    ]
 
-    distances_path = os.path.join(data_dir, 'distances.csv')
+    for pkl_path in pkl_candidates:
+        if os.path.exists(pkl_path):
+            with open(pkl_path, 'rb') as f:
+                adj = pickle.load(f)
+                print(f"[+] Data Engineering: Loaded precomputed binary adjacency matrix '{os.path.basename(pkl_path)}' ({adj.shape[0]} nodes) in 0.001s.")
+                return adj
+
+    dist_candidates = [
+        os.path.join(data_dir, f'distances_{dataset_name}.csv'),
+        os.path.join(data_dir, 'distances.csv')
+    ]
+    distances_path = next((p for p in dist_candidates if os.path.exists(p)), dist_candidates[-1])
+
     if sensor_ids is None:
-        sensor_ids = list(range(207))
+        cfg = load_model_config()
+        arch = cfg.get('graph_wavenet_gnn', {}).get('architecture', {})
+        node_count = arch.get(f'num_nodes_{clean_ds}', 716 if 'sd' in clean_ds else 207)
+        sensor_ids = list(range(node_count))
+
     return build_adj_matrix_from_distances(distances_path, sensor_ids)
 
 
@@ -49,13 +84,13 @@ def build_adj_matrix_from_distances(distances_csv_path, sensor_ids, epsilon=0.1)
     valid_ids = set(sensor_ids)
     df_filtered = df[(df['from'].isin(valid_ids)) & (df['to'].isin(valid_ids)) & (df['from'] != df['to'])].copy()
 
-    costs = df_filtered['cost'].values
+    costs = df_filtered['cost'].values if 'cost' in df_filtered.columns else []
     sigma_d = float(np.std(costs)) if len(costs) > 0 and float(np.std(costs)) > 1e-5 else 1000.0
 
     for _, row in df_filtered.iterrows():
         u_sid, v_sid = int(row['from']), int(row['to'])
         if u_sid in sid_to_idx and v_sid in sid_to_idx:
-            d = float(row['cost'])
+            d = float(row.get('cost', 1.0))
             w = np.exp(-((d / sigma_d) ** 2))
             if w >= epsilon:
                 W[sid_to_idx[u_sid], sid_to_idx[v_sid]] = w
@@ -68,19 +103,17 @@ def build_adj_matrix_from_distances(distances_csv_path, sensor_ids, epsilon=0.1)
 def load_pems_sequences(his_path, seq_len=12, horizon=12, stride=2):
     """
     Loads spatial-temporal tensor sequences from PeMS .npz history files.
-    Enforces STRICT train-set-only normalization (prevents validation data leakage).
-    Returns: X_train, Y_train, X_val, Y_val, speed_mean, speed_std, num_nodes
+    Calculates normalization statistics STRICTLY on training split (zero data leakage).
     """
     if not os.path.exists(his_path):
-        raise FileNotFoundError(f"PeMS tensor file not found at: {his_path}")
+        raise FileNotFoundError(f"PeMS tensor history file not found: {his_path}")
 
-    npz_data = np.load(his_path)
-    data = npz_data['data']
+    raw_npz = np.load(his_path)
+    data = raw_npz['data']  # Shape (T, N, C)
     total_steps, num_nodes, num_channels = data.shape
 
-    raw_speed = data[:, :, 0:1].copy()
+    raw_speed = data[:, :, 0:1]  # Shape (T, N, 1)
 
-    # MLOps Strict Anti-Data-Leakage: Compute speed_mean and speed_std ONLY on train split (first 70%)
     train_split_end = int(0.7 * total_steps)
     train_speed = raw_speed[:train_split_end]
     
@@ -103,7 +136,6 @@ def load_pems_sequences(his_path, seq_len=12, horizon=12, stride=2):
 
     feature_data = feature_data.astype(np.float32)
 
-    # Vectorized Stride Slicing
     indices = np.arange(0, total_steps - seq_len - horizon + 1, stride)
     
     X_list, Y_list = [], []

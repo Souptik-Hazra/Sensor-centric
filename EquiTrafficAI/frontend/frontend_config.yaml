@@ -34,9 +34,12 @@ gis_engine:
     la: 11
     sd: 10
     pems04: 11
+    pems08: 10
+    pems_bay: 11
   default_center:
     la: [34.0522, -118.2437]
     sd: [32.7157, -117.1611]
+    pems04: [37.7749, -122.4194]
 
 playback_engine:
   total_timesteps: 288
@@ -58,7 +61,8 @@ design_system:
     zero_flow: "#38bdf8"
 
 features:
-  future_vision_mode: true
+  llm_copilot_drawer: true
+  pareto_equity_matrix: true
+  predictive_congestion_layer: true
+  causal_scm_modal: true
   smart_reroute_planner: true
-  proactive_15min_alerts: true
-  pareto_policy_advisor: true
