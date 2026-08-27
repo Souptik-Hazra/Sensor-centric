@@ -28,15 +28,14 @@ const useTrafficStore = create((set, get) => ({
     }
   },
 
-  setTimestampIndex: async (index) => {
+  setTimestampIndex: async (index, city = "la") => {
     // Only update if it changed
     if (index === get().currentTimestampIndex) return;
     
     set({ currentTimestampIndex: index });
     
-    // In a real app with real APIs, we might debounce this
     try {
-      const newData = await fetchTrafficState(index);
+      const newData = await fetchTrafficState(index, city);
       set({ trafficData: newData.readings });
     } catch (err) {
       console.error("Failed to fetch traffic state", err);

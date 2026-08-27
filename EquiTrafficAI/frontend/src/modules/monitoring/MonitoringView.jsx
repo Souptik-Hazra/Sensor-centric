@@ -1,15 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import useTrafficStore from '../../store/useTrafficStore';
 import styles from './MonitoringView.module.css';
 
 const MonitoringView = () => {
-  const { sensors, trafficData, initializeData, currentTimestampIndex } = useTrafficStore();
+  // Optimized Atomic Zustand Selectors to prevent unnecessary component re-renders
+  const sensors = useTrafficStore((state) => state.sensors);
+  const trafficData = useTrafficStore((state) => state.trafficData);
+  const currentTimestampIndex = useTrafficStore((state) => state.currentTimestampIndex);
+  const initializeData = useTrafficStore((state) => state.initializeData);
 
   useEffect(() => {
     if (sensors.length === 0) {
       initializeData();
     }
   }, [sensors.length, initializeData]);
+
+  // Memoized speed lookup map for O(1) rendering speed
+  const speedMap = useMemo(() => {
+    const map = new Map();
+    trafficData.forEach((d) => map.set(String(d.sensor_id), d));
+    return map;
+  }, [trafficData]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -22,15 +33,15 @@ const MonitoringView = () => {
 
   return (
     <div className={styles.container}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className={styles.headerRow}>
         <h2 className={styles.title}>Real-time Sensor Monitoring</h2>
-        <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+        <span className={styles.timeIndex}>
           Time Index: {currentTimestampIndex}
         </span>
       </div>
       
       <div className={styles.tableContainer}>
-        <table className={styles.table}>
+        <table className={styles.table} aria-label="Real-time Highway Sensor Telemetry Table">
           <thead>
             <tr>
               <th>Sensor ID</th>
@@ -42,18 +53,18 @@ const MonitoringView = () => {
           </thead>
           <tbody>
             {sensors.map(sensor => {
-              const data = trafficData.find(d => String(d.sensor_id) === String(sensor.sensor_id));
+              const data = speedMap.get(String(sensor.sensor_id));
               const currentSpeed = data?.speed || sensor.speed || 58.5;
               const statusType = data?.status || (currentSpeed >= 50 ? 'fast' : currentSpeed >= 25 ? 'medium' : 'slow');
               const locationName = sensor.location_label || sensor.name || `Corridor Sensor #${sensor.sensor_id}`;
 
               return (
                 <tr key={sensor.sensor_id}>
-                  <td style={{ fontWeight: 600, color: '#38bdf8' }}>{sensor.sensor_id}</td>
+                  <td className={styles.sensorIdCell}>{sensor.sensor_id}</td>
                   <td>{locationName}</td>
-                  <td style={{ fontWeight: 700 }}>{currentSpeed.toFixed(1)} mph</td>
+                  <td className={styles.speedCell}>{currentSpeed.toFixed(1)} mph</td>
                   <td>{getStatusBadge(statusType)}</td>
-                  <td style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                  <td className={styles.coordCell}>
                     {(sensor.lat || 34.05).toFixed(4)}, {(sensor.lon || sensor.lng || -118.24).toFixed(4)}
                   </td>
                 </tr>
@@ -61,7 +72,7 @@ const MonitoringView = () => {
             })}
             {sensors.length === 0 && (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)' }}>
+                <td colSpan="5" className={styles.loadingCell}>
                   Loading sensor data...
                 </td>
               </tr>
@@ -73,4 +84,4 @@ const MonitoringView = () => {
   );
 };
 
-export default MonitoringView;
+export default React.memo(MonitoringView);

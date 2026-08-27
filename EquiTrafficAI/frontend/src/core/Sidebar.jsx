@@ -20,12 +20,13 @@ const Sidebar = () => {
         {!isCollapsed && <span className={styles.brandText}>TrafficOS</span>}
       </div>
 
-      <nav className={styles.nav}>
+      <nav className={styles.nav} aria-label="Main Navigation">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             title={isCollapsed ? item.label : ''}
+            aria-label={item.label}
             className={({ isActive }) =>
               isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem
             }
@@ -40,10 +41,12 @@ const Sidebar = () => {
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={styles.toggleBtn}
+        aria-label={isCollapsed ? "Expand Sidebar Navigation" : "Collapse Sidebar Navigation"}
+        aria-expanded={!isCollapsed}
         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
       >
         {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        {!isCollapsed && <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Minimize Sidebar</span>}
+        {!isCollapsed && <span className={styles.toggleText}>Minimize Sidebar</span>}
       </button>
     </aside>
   );

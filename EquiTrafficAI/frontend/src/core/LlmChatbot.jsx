@@ -1,13 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, RefreshCw, Navigation, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Navigation } from 'lucide-react';
 import styles from './LlmChatbot.module.css';
-
-const QUICK_PROMPTS = [
-  "🚗 Which way to avoid & use if starting now?",
-  "🚨 15-Min Historical Pattern Comparison",
-  "🏟️ Dodger Stadium Event Reroute",
-  "🚧 Road Blockade Egress Route"
-];
+import ChatMessageList from './components/ChatMessageList';
+import QuickPromptChips from './components/QuickPromptChips';
+import ChatHeaderBar from './components/ChatHeaderBar';
+import ChatInputFooter from './components/ChatInputFooter';
 
 const INITIAL_MESSAGES = [
   {
@@ -25,7 +22,7 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
   const [lastAlertStep, setLastAlertStep] = useState(-1);
   const messagesEndRef = useRef(null);
 
-  const getDisplayTime = (step) => {
+  const getDisplayTime = useCallback((step) => {
     const totalMinutes = step * 5;
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
@@ -33,27 +30,19 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
     const displayHours = hours % 12 === 0 ? 12 : hours % 12;
     const displayMins = mins < 10 ? '0' + mins : mins;
     return `${displayHours}:${displayMins} ${ampm}`;
-  };
+  }, []);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       scrollToBottom();
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, scrollToBottom]);
 
-  // Autonomous 15-Minute Proactive Alert Engine (Triggers every 3 steps = 15 minutes)
-  useEffect(() => {
-    if (currentStep > 0 && currentStep % 3 === 0 && currentStep !== lastAlertStep) {
-      setLastAlertStep(currentStep);
-      triggerProactive15MinAlert(currentStep);
-    }
-  }, [currentStep]);
-
-  const triggerProactive15MinAlert = async (stepVal) => {
+  const triggerProactive15MinAlert = useCallback(async (stepVal) => {
     const timeLabel = getDisplayTime(stepVal);
     try {
       let response;
@@ -96,9 +85,17 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
     } catch (err) {
       console.error('Auto alert fetch error:', err);
     }
-  };
+  }, [getDisplayTime, selectedCity]);
 
-  const handleSendMessage = async (customText = '') => {
+  // Autonomous 15-Minute Proactive Alert Engine (Triggers every 3 steps = 15 minutes)
+  useEffect(() => {
+    if (currentStep > 0 && currentStep % 3 === 0 && currentStep !== lastAlertStep) {
+      setLastAlertStep(currentStep);
+      triggerProactive15MinAlert(currentStep);
+    }
+  }, [currentStep, lastAlertStep, triggerProactive15MinAlert]);
+
+  const handleSendMessage = useCallback(async (customText = '') => {
     const textToSend = customText || inputPrompt;
     if (!textToSend.trim()) return;
 
@@ -158,7 +155,7 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [inputPrompt, currentStep, getDisplayTime, selectedCity]);
 
   return (
     <>
@@ -167,6 +164,8 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
         <button 
           onClick={() => setIsOpen(true)} 
           className={styles.floatingBtn}
+          aria-label="Open EquiTraffic-GPT Smart Reroute Copilot Chat"
+          aria-expanded={false}
           title="Open EquiTraffic-GPT Smart Reroute Copilot"
         >
           <Navigation size={20} color="#ffffff" />
@@ -177,117 +176,34 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
 
       {/* Interactive Chatbot Window */}
       {isOpen && (
-        <div className={styles.chatWindow}>
+        <div className={styles.chatWindow} role="dialog" aria-label="EquiTraffic-GPT Copilot Dialog" aria-modal="false">
           
-          {/* Header Bar */}
-          <div className={styles.chatHeader}>
-            <div className={styles.headerInfo}>
-              <div className={styles.botIconWrapper}>
-                <Navigation size={18} color="#38bdf8" />
-              </div>
-              <div>
-                <div className={styles.headerTitle}>EquiTraffic-GPT Copilot</div>
-                <div className={styles.headerSubtitle}>
-                  <span className={styles.greenDot}></span> Auto 15-Min Pattern Rerouting
-                </div>
-              </div>
-            </div>
+          {/* Header Bar Sub-Component */}
+          <ChatHeaderBar 
+            onReset={() => setMessages(INITIAL_MESSAGES)}
+            onClose={() => setIsOpen(false)}
+          />
 
-            <div className={styles.headerActions}>
-              <button 
-                onClick={() => setMessages(INITIAL_MESSAGES)} 
-                className={styles.headerBtn}
-                title="Reset Conversation"
-              >
-                <RefreshCw size={14} />
-              </button>
-              <button 
-                onClick={() => setIsOpen(false)} 
-                className={styles.headerBtn}
-                title="Minimize Chatbot"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
+          {/* Messages Body Sub-Component */}
+          <ChatMessageList 
+            messages={messages} 
+            isLoading={isLoading} 
+            messagesEndRef={messagesEndRef} 
+          />
 
-          {/* Messages Body */}
-          <div className={styles.chatBody}>
-            {messages.map((msg, idx) => (
-              <div 
-                key={idx} 
-                className={`${styles.messageWrapper} ${msg.sender === 'user' ? styles.userWrapper : styles.botWrapper}`}
-              >
-                {msg.sender === 'bot' && (
-                  <div className={styles.msgAvatar}>
-                    <Navigation size={14} color="#38bdf8" />
-                  </div>
-                )}
+          {/* Quick Action Prompt Chips Sub-Component */}
+          <QuickPromptChips 
+            handleSendMessage={handleSendMessage} 
+            isLoading={isLoading} 
+          />
 
-                <div className={`${styles.messageBubble} ${msg.sender === 'user' ? styles.userBubble : styles.botBubble}`}>
-                  <div className={styles.messageText} style={{ whiteSpace: 'pre-wrap' }}>
-                    {msg.text.split(/(\*\*.*?\*\*)/g).map((part, idx) => {
-                      if (part.startsWith('**') && part.endsWith('**')) {
-                        return <strong key={idx} style={{ color: '#38bdf8' }}>{part.slice(2, -2)}</strong>;
-                      }
-                      return part;
-                    })}
-                  </div>
-                  <div className={styles.messageTime}>{msg.time}</div>
-                </div>
-              </div>
-            ))}
-
-            {isLoading && (
-              <div className={`${styles.messageWrapper} ${styles.botWrapper}`}>
-                <div className={styles.msgAvatar}>
-                  <Navigation size={14} color="#38bdf8" />
-                </div>
-                <div className={`${styles.messageBubble} ${styles.botBubble}`}>
-                  <div className={styles.typingIndicator}>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Action Prompt Chips */}
-          <div className={styles.quickPrompts}>
-            {QUICK_PROMPTS.map((prompt, idx) => (
-              <button 
-                key={idx} 
-                onClick={() => handleSendMessage(prompt)}
-                className={styles.chipBtn}
-                disabled={isLoading}
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-
-          {/* Input Footer */}
-          <div className={styles.chatFooter}>
-            <input 
-              type="text" 
-              placeholder="Ask which way to avoid or reroute if starting now..."
-              value={inputPrompt}
-              onChange={(e) => setInputPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              className={styles.chatInput}
-              disabled={isLoading}
-            />
-            <button 
-              onClick={() => handleSendMessage()}
-              className={styles.sendBtn}
-              disabled={isLoading || !inputPrompt.trim()}
-            >
-              <Send size={15} />
-            </button>
-          </div>
+          {/* Input Footer Sub-Component */}
+          <ChatInputFooter 
+            inputPrompt={inputPrompt}
+            setInputPrompt={setInputPrompt}
+            handleSendMessage={handleSendMessage}
+            isLoading={isLoading}
+          />
 
         </div>
       )}

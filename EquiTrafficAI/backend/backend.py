@@ -500,8 +500,11 @@ def plan_smart_route(req: RouteRequest):
         },
         "target_arrival_time": req.target_time,
         "recommended_departure_time": f"Depart in 5 mins",
+        "total_distance_miles": round(dist_km * 0.621371, 1),
         "estimated_travel_time_mins": travel_time_mins,
+        "estimated_travel_time_min": travel_time_mins,
         "estimated_time_saved_mins": time_saved_mins,
+        "time_saved_msg": f"Saves {time_saved_mins} mins by avoiding bottleneck links!",
         "recommended_path_coords": recommended_path_coords,
         "congested_avoid_coords": congested_avoid_coords,
         "summary": f"Optimal Route from {origin.get('location_label')} → {destination.get('location_label')}: Takes {travel_time_mins} mins, saving {time_saved_mins} mins by avoiding bottleneck segments."

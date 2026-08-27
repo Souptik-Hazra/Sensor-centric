@@ -9,10 +9,21 @@
   gap: 16px;
 }
 
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .title {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.timeIndex {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
 }
 
 .tableContainer {
@@ -42,6 +53,27 @@
   color: var(--text-primary);
 }
 
+.sensorIdCell {
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.speedCell {
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.coordCell {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.loadingCell {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-secondary);
+}
+
 .table tbody tr:hover {
   background-color: var(--bg-primary);
 }
@@ -52,21 +84,24 @@
   padding: 4px 10px;
   border-radius: 99px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
 .fast {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
 }
 
 .medium {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .slow {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }

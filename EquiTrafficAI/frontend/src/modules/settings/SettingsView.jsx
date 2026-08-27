@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sliders, Server, ShieldCheck, Database, Save, CheckCircle2 } from 'lucide-react';
+import { Server, ShieldCheck, Database, Save, CheckCircle2 } from 'lucide-react';
 
 const SettingsView = () => {
   const [defaultCity, setDefaultCity] = useState('la');
@@ -16,38 +16,39 @@ const SettingsView = () => {
   };
 
   return (
-    <div style={{ padding: '24px', background: '#0f172a', minHeight: '100vh', color: '#f8fafc' }}>
+    <div className="ui-page-wrapper ui-card-panel mb-0">
       
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#38bdf8', marginBottom: '4px' }}>
+      <div className="mb-24">
+        <h2 className="ui-section-title text-cyan">
           System Settings & AI Configuration
         </h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+        <p className="ui-section-desc">
           Configure default datasets, GWNet forecasting horizons, Pareto policy rules, and API endpoints.
         </p>
       </div>
 
       {savedSuccess && (
-        <div style={{ background: '#05966922', border: '1px solid #10b981', color: '#34d399', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 'bold' }}>
+        <div className="ui-alert-success">
           <CheckCircle2 size={18} /> System configurations saved successfully!
         </div>
       )}
 
-      <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+      <form onSubmit={handleSave} className="ui-form-grid">
         
         {/* Card 1: Dataset & Forecasting Defaults */}
-        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '20px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#38bdf8', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div className="ui-card-panel mb-0">
+          <h3 className="ui-section-title text-cyan mb-16">
             <Database size={16} /> Dataset & GWNet Forecast Defaults
           </h3>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}>Default City Dataset:</label>
+          <div className="ui-form-group">
+            <label htmlFor="select-default-city" className="ui-label-sm ui-label-block">Default City Dataset:</label>
             <select 
+              id="select-default-city"
               value={defaultCity} 
               onChange={(e) => setDefaultCity(e.target.value)}
-              style={{ width: '100%', background: '#0f172a', color: '#f8fafc', border: '1px solid #334155', padding: '8px 12px', borderRadius: '6px', fontSize: '13px' }}
+              className="ui-select-dark"
             >
               <option value="la">Los Angeles METR-LA (207 Sensors)</option>
               <option value="sd">San Diego SD400 (716 Sensors)</option>
@@ -55,11 +56,12 @@ const SettingsView = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}>Default GWNet Forecast Horizon:</label>
+            <label htmlFor="select-default-horizon" className="ui-label-sm ui-label-block">Default GWNet Forecast Horizon:</label>
             <select 
+              id="select-default-horizon"
               value={defaultHorizon} 
               onChange={(e) => setDefaultHorizon(parseInt(e.target.value))}
-              style={{ width: '100%', background: '#0f172a', color: '#f8fafc', border: '1px solid #334155', padding: '8px 12px', borderRadius: '6px', fontSize: '13px' }}
+              className="ui-select-dark"
             >
               <option value={15}>15-minute Short Horizon</option>
               <option value={30}>30-minute Medium Horizon (Recommended)</option>
@@ -69,17 +71,18 @@ const SettingsView = () => {
         </div>
 
         {/* Card 2: Feature 2 - Pareto Policy Advisor Defaults */}
-        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '20px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#c084fc', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div className="ui-card-panel mb-0">
+          <h3 className="ui-section-title text-purple mb-16">
             <ShieldCheck size={16} /> Feature 2: Civic Policy Defaults
           </h3>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}>Active Reliability Variant:</label>
+          <div className="ui-form-group">
+            <label htmlFor="select-reliability-variant" className="ui-label-sm ui-label-block">Active Reliability Variant:</label>
             <select 
+              id="select-reliability-variant"
               value={reliabilityVariant} 
               onChange={(e) => setReliabilityVariant(e.target.value)}
-              style={{ width: '100%', background: '#0f172a', color: '#f8fafc', border: '1px solid #334155', padding: '8px 12px', borderRadius: '6px', fontSize: '13px' }}
+              className="ui-select-dark"
             >
               <option value="reliability_equal">reliability_equal (Suburban Equity Priority)</option>
               <option value="reliability_pca">reliability_pca (Maximum Throughput Priority)</option>
@@ -88,46 +91,50 @@ const SettingsView = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}>Baseline Regional Fairness (RSF) Target:</label>
+            <label htmlFor="input-fairness-target" className="ui-label-sm ui-label-block">Baseline Regional Fairness (RSF) Target:</label>
             <input 
+              id="input-fairness-target"
               type="text" 
               value="0.0920" 
               disabled 
-              style={{ width: '100%', background: '#0f172a', color: '#94a3b8', border: '1px solid #334155', padding: '8px 12px', borderRadius: '6px', fontSize: '13px' }}
+              className="ui-select-dark text-secondary"
+              aria-disabled="true"
             />
           </div>
         </div>
 
         {/* Card 3: Backend API & Camera Endpoint Settings */}
-        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '20px', gridColumn: '1 / -1' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#34d399', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div className="ui-card-panel ui-col-full mb-0">
+          <h3 className="ui-section-title text-emerald mb-16">
             <Server size={16} /> FastAPI Backend & Camera Endpoints
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+          <div className="ui-pareto-grid mb-20">
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}>FastAPI Backend Base URL:</label>
+              <label htmlFor="input-api-url" className="ui-label-sm ui-label-block">FastAPI Backend Base URL:</label>
               <input 
+                id="input-api-url"
                 type="text" 
                 value={apiUrl} 
                 onChange={(e) => setApiUrl(e.target.value)}
-                style={{ width: '100%', background: '#0f172a', color: '#f8fafc', border: '1px solid #334155', padding: '8px 12px', borderRadius: '6px', fontSize: '13px' }}
+                className="ui-select-dark"
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}>Caltrans Public CCTV Endpoint:</label>
+              <label htmlFor="input-cctv-endpoint" className="ui-label-sm ui-label-block">Caltrans Public CCTV Endpoint:</label>
               <input 
+                id="input-cctv-endpoint"
                 type="text" 
                 value={cctvEndpoint} 
                 onChange={(e) => setCctvEndpoint(e.target.value)}
-                style={{ width: '100%', background: '#0f172a', color: '#f8fafc', border: '1px solid #334155', padding: '8px 12px', borderRadius: '6px', fontSize: '13px' }}
+                className="ui-select-dark"
               />
             </div>
           </div>
 
           <button 
             type="submit"
-            style={{ background: '#0284c7', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: '700', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            className="ui-btn-blue"
           >
             <Save size={16} /> Save System Settings
           </button>

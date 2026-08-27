@@ -52,56 +52,13 @@
   white-space: nowrap;
 }
 
-.headerLabel {
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-}
 
-.headerSelect {
-  background: #1e293b;
-  color: #38bdf8;
-  border: 1px solid #334155;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-weight: 700;
-  font-size: 12px;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.headerSelect:hover {
-  border-color: #38bdf8;
-}
-
-.horizonBadge {
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
-  white-space: nowrap;
-}
 
 .divider {
   color: #334155;
   font-weight: 300;
 }
 
-.replayBadge {
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 5px 10px;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
-}
 
 .toggleRightBtn {
   background: #334155;
@@ -166,16 +123,32 @@
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
-.edgeToggle {
-  margin-top: 10px;
-  padding-top: 8px;
+.dotGreen { background-color: #2ecc71; }
+.dotYellow { background-color: #f1c40f; }
+.dotRed { background-color: #e74c3c; }
+.dotBlue { background-color: #38bdf8; }
+
+
+.edgeLegendDivider {
+  margin-top: 8px;
   border-top: 1px solid #334155;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: #cbd5e1;
-  cursor: pointer;
+  padding-top: 6px;
+}
+
+.routeLineCyan {
+  display: inline-block;
+  width: 16px;
+  height: 4px;
+  background-color: #00ffcc;
+  margin-right: 6px;
+}
+
+.routeLineRed {
+  display: inline-block;
+  width: 16px;
+  height: 4px;
+  background-color: #ff0055;
+  margin-right: 6px;
 }
 
 .sidebar {
@@ -290,41 +263,35 @@
   transform: scale(0.98);
 }
 
-.btnPlay {
-  background-color: #059669;
+.btnPlay { background-color: #059669; }
+.btnPause { background-color: #d97706; }
+.btnReset { background-color: #475569; }
+
+
+
+
+.popupCard { font-size: 11px; color: #0f172a; padding: 2px; }
+.popupTitle { color: #0284c7; font-weight: 700; }
+.popupBtnGroup { display: flex; gap: 4px; margin-top: 6px; }
+
+.popupBtnOrigin {
+  background: #00ffcc;
+  color: #0f172a;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
-.btnPause {
-  background-color: #d97706;
-}
-
-.btnReset {
-  background-color: #475569;
-}
-
-.btnAction {
-  width: 100%;
-  background-color: #0284c7;
-  padding: 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  margin-top: 4px;
-}
-
-.logBox {
-  margin-top: 10px;
-  background: #090d16;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  padding: 10px;
-  max-height: 140px;
-  overflow-y: auto;
-}
-
-.logText {
-  font-family: monospace;
-  font-size: 11px;
-  color: #38bdf8;
-  white-wrap: pre-wrap;
-  word-break: break-word;
+.popupBtnDest {
+  background: #ff0055;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
 }

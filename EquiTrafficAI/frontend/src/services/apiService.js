@@ -1,6 +1,6 @@
 // Production API Service connecting React Leaflet GIS Frontend directly to FastAPI Backend
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+const BACKEND_URL = typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:8000";
 
 // Fallback sample sensors for instant render if backend is starting
 export const MOCK_SENSORS = [
