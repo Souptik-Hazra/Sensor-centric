@@ -1,6 +1,0 @@
-Strategy,Paradigms,MAE_mph,RSF_disparity,Pareto_Optimal,Dominates_Software_FairSTG
-DCRNN_Baseline,Observational Baseline,2.77,0.38,DOMINATED (SUB-OPTIMAL),NO
-GWNet_Baseline,Observational Baseline,2.69,0.35,DOMINATED (SUB-OPTIMAL),NO
-FairSTG_Reweight,Level-1 Software Loss Re-Weighting,2.89,0.28,DOMINATED (SUB-OPTIMAL),NO
-FairTP_StateGuided,Level-1 Balanced Sampling,2.75,0.24,DOMINATED (SUB-OPTIMAL),YES (PARETO SUPERIOR)
-Causal_Twin_do_R95,Level-3 Structural Hardware Repair,2.44,0.18,PARETO OPTIMAL,YES (PARETO SUPERIOR)
