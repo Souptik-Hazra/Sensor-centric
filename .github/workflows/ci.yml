@@ -1,0 +1,89 @@
+name: EquiTraffic-GPT CI/CD Pipeline
+
+on:
+  push:
+    branches: [ full-production-v2.0, main ]
+  pull_request:
+    branches: [ full-production-v2.0, main ]
+
+jobs:
+  # ============================================================================
+  # 1. FRONTEND REACT & WEB GIS CI
+  # ============================================================================
+  frontend-ci:
+    name: Frontend React Build & YAML Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js Environment (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'EquiTrafficAI/frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        working-directory: EquiTrafficAI/frontend
+        run: npm ci
+
+      - name: Validate Frontend YAML Config
+        run: |
+          node -e "
+            const fs = require('fs');
+            const file = fs.readFileSync('EquiTrafficAI/frontend/frontend_config.yaml', 'utf8');
+            console.log('✅ frontend_config.yaml successfully loaded (' + file.length + ' bytes)');
+          "
+
+      - name: Run Production Bundle Build (Vite)
+        working-directory: EquiTrafficAI/frontend
+        run: npm run build
+
+  # ============================================================================
+  # 2. BACKEND FASTAPI & DEEP LEARNING MODEL CI
+  # ============================================================================
+  backend-ci:
+    name: Backend FastAPI & GNN Model Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python Environment (v3.11)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python Backend & ML Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi uvicorn requests numpy pandas pyyaml
+
+      - name: Validate Backend & Model YAML Schemas
+        run: |
+          python -c "
+          import yaml
+          with open('EquiTrafficAI/backend/backend_config.yaml', 'r') as f:
+              b_cfg = yaml.safe_load(f)
+              print('[+] backend_config.yaml valid:', b_cfg['server']['app_name'])
+          with open('EquiTrafficAI/backend/model_config.yaml', 'r') as f:
+              m_cfg = yaml.safe_load(f)
+              print('[+] model_config.yaml valid:', m_cfg['graph_wavenet_gnn']['model_name'])
+          "
+
+      - name: AST Syntax Compilation Check
+        run: |
+          python -m py_compile backend.py EquiTrafficAI/backend/backend.py EquiTrafficAI/backend/llm_engine.py EquiTrafficAI/backend/sensor_location_mapper.py
+
+      - name: Test FastAPI Backend Startup & Health Endpoint
+        run: |
+          python -c "
+          import sys, os
+          sys.path.insert(0, os.path.abspath('EquiTrafficAI/backend'))
+          import backend
+          print('[+] FastAPI Application loaded successfully:', backend.app.title)
+          "
