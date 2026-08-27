@@ -1,0 +1,145 @@
+# ==============================================================================
+# EquiTrafficAI - Deep Learning GNN & Traffic LLM Engine Configuration
+# ==============================================================================
+
+graph_wavenet_gnn:
+  model_name: "GraphWaveNet_AdaptiveAdjacency"
+  version: "2.0.0"
+  input_dimensions: 3 # [speed, time_of_day, day_of_week]
+  output_horizons:
+    short_horizon_min: 15 # 3 timesteps
+    medium_horizon_min: 30 # 6 timesteps
+    long_horizon_min: 60 # 12 timesteps
+
+  architecture:
+    num_nodes_metr_la: 207
+    num_nodes_sd400: 716
+    num_nodes_pems04: 307
+    num_nodes_pems08: 170
+    num_nodes_pems_bay: 325
+    num_nodes_pems03: 358
+    num_nodes_pems07: 883
+    adaptive_adj_embedding_dim: 10
+    gcn_depth: 2
+    dropout: 0.3
+    spatial_kernel_size: 2
+    temporal_kernel_size: 2
+    residual_channels: 32
+    dilation_channels: 32
+    skip_channels: 256
+    end_channels: 512
+
+  serving:
+    adapter_class: "UniversalPeMSAdapter"
+    torch_inference_mode: true
+    strict_weight_loading: false
+    device: "auto" # 'cuda' if available else 'cpu'
+
+  training:
+    default_epochs: 50
+    default_batch_size: 64
+    default_learning_rate: 0.001
+    default_stride: 2
+    weight_decay: 0.0001
+    eta_min: 0.00001
+    max_grad_norm: 5.0
+    bottleneck_threshold_mph: 25.0
+
+  loss:
+    alpha: 3.0
+    beta: 1.5
+    default_speed_threshold_norm: -1.5
+
+  dataset_catalog:
+    metr_la:
+      display_name: "METR-LA (Los Angeles)"
+      num_nodes: 207
+      in_dim: 3
+      out_dim: 1
+      horizon: 12
+      skip_channels: 256
+      end_channels: 512
+      adj_filename: "adj_metr_la.pkl"
+      his_filename: "metr_la_his.npz"
+    sd400:
+      display_name: "SD400 (San Diego)"
+      num_nodes: 716
+      in_dim: 3
+      out_dim: 12
+      horizon: 12
+      skip_channels: 64
+      end_channels: 128
+      adj_filename: "adj_sd400.pkl"
+      his_filename: "sd400_his.npz"
+    pems04:
+      display_name: "PeMS04 (SF Bay Area)"
+      num_nodes: 307
+      in_dim: 3
+      out_dim: 1
+      horizon: 12
+      skip_channels: 256
+      end_channels: 512
+
+  benchmarks:
+    gwnet_mae_15min: 2.15
+    gwnet_mae_30min: 2.89
+    gwnet_mae_60min: 3.61
+    dcrnn_mae_baseline: 2.77
+    fairstg_mae_baseline: 2.45
+
+causal_scm_decomposition:
+  framework: "Controlled Direct & Indirect Effect (SCM)"
+  direct_effect_pct: 21.4 # Ctf_DE = 21.4%
+  indirect_effect_reliability_pct: 61.3 # Ctf_IE_R = 61.3%
+  mediation_formula: "Total_Disparity = Ctf_DE + Ctf_IE_R + Residual"
+  reliability_variants:
+    - name: "reliability_equal"
+      description: "Suburban Equity Priority (Equal Sensor Reliability Weighting)"
+      target_rsf: 0.14
+    - name: "reliability_pca"
+      description: "Maximum Throughput Priority (PCA Eigen-Reliability Weighting)"
+      target_rsf: 0.22
+    - name: "reliability_original"
+      description: "Baseline Uncalibrated Sensor Reliability"
+      target_rsf: 0.38
+
+pareto_frontier_optimizer:
+  objectives:
+    primary_loss: "MAE (Mean Absolute Error)"
+    secondary_disparity: "RSF (Regional Severity Fairness / Disparity)"
+  pareto_points:
+    - strategy: "DCRNN Baseline"
+      mae: 2.77
+      rsf: 0.38
+      status: "DOMINATED"
+    - strategy: "FairSTG Baseline"
+      mae: 2.45
+      rsf: 0.28
+      status: "SUB-OPTIMAL"
+    - strategy: "GWNet (Suburban Equity)"
+      mae: 2.15
+      rsf: 0.14
+      status: "PARETO_OPTIMAL"
+    - strategy: "GWNet (Max Throughput)"
+      mae: 1.82
+      rsf: 0.22
+      status: "PARETO_OPTIMAL"
+
+traffic_llm_engine:
+  provider: "Google Gemini API"
+  primary_model: "gemini-2.5-flash-lite"
+  fallback_model: "gemini-1.5-flash"
+  timeout_seconds: 8.0
+  temperature: 0.2
+  max_output_tokens: 512
+  proactive_alerts:
+    interval_timesteps: 3 # Every 15 minutes
+    trigger_speed_drop_threshold_mph: 15.0
+  prompt_templates:
+    causal_reroute_system_prompt: |
+      You are EquiTraffic-GPT Smart Reroute Copilot, powered by Gemini Flash 2.5 Lite.
+      Compare current highway speeds against historical same-day baselines for {time_label}.
+      Provide actionable rerouting advice with 3 sections:
+      1. Pattern Analysis vs Historical Baseline
+      2. Specific Freeway Paths to Avoid
+      3. Recommended Alternate Reroutes & Estimated Time Saved.
