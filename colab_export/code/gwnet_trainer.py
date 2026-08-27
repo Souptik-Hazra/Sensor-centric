@@ -177,14 +177,14 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
                 'use_attn': use_attn
             }, versioned_tar_path)
 
-            metrics = {"val_mae": round(float(best_val_mae), 4), "val_mae_mph": round(float(val_mae_mph), 2), "val_r2": round(float(r2), 4)}
+            metrics = {"val_mae": round(float(best_val_mae), 4), "val_mae_mph": round(float(true_mae_mph), 2), "val_r2": round(float(r2), 4)}
             hparams = {"in_dim": 3, "horizon": 12, "batch_size": batch_size, "lr": lr, "stride": stride, "alpha": loss_cfg.get('alpha', 3.0), "beta": loss_cfg.get('beta', 1.5), "use_attn": use_attn}
             register_model_version(dataset_name, version_str, versioned_pt_path, versioned_tar_path, metrics, hparams)
             status = f"[SAVED {version_str}]"
         else:
             status = ""
 
-        log_msg = f"Epoch {epoch:<3} | Train: {avg_train_mae:<6.4f} | Val Norm: {avg_val_mae:<6.4f} | Val MPH: {val_mae_mph:<6.2f}mph | R²: {r2:<6.4f} | {epoch_sec:<6.2f}s | {status}\n"
+        log_msg = f"Epoch {epoch:<3} | Train: {avg_train_mae:<6.4f} | Val Norm: {avg_val_mae:<6.4f} | Val MPH: {true_mae_mph:<6.2f}mph | R²: {r2:<6.4f} | {epoch_sec:<6.2f}s | {status}\n"
         sys.stdout.write(log_msg)
         sys.stdout.flush()
 
