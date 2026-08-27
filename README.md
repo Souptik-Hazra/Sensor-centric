@@ -52,32 +52,30 @@
 
 ## 🚀 Quickstart Guide
 
-### 1. Backend Server Setup (FastAPI)
+### Single-Server Mode (Recommended)
+Run the master single-command runner from the root directory:
 ```bash
 # Clone the repository
 git clone https://github.com/Souptik-Hazra/Sensor-centric.git
 cd Sensor-centric
 
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Launch FastAPI backend server (Port 8000)
-python EquiTrafficAI/backend/backend.py
+# Launch Unified Single-Server (FastAPI Backend + React Web GIS UI)
+python backend.py
 ```
 
-### 2. Frontend Setup (React + Vite)
+Open **`http://127.0.0.1:8000/`** in your web browser.
+
+### Separate Development Mode (Vite HMR)
 ```bash
 # Navigate to web frontend directory
-cd traffic-system-web
+cd EquiTrafficAI/frontend
 
-# Install Node dependencies
+# Install Node dependencies & launch Vite Dev Server
 npm install
-
-# Start Vite React Dev Server
 npm run dev
 ```
 
-Open **`http://localhost:5174/map`** in your web browser.
+Open **`http://localhost:5173/`** in your web browser.
 
 ---
 
