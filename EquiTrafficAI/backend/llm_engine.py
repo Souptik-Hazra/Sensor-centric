@@ -1,14 +1,32 @@
 import os
 import json
 import requests
+import yaml
 
 class GeminiFlashLiteLLMEngine:
     def __init__(self):
-        self.model_name = "gemini-2.5-flash-lite"
+        self.model_config = self._load_model_config()
+        llm_cfg = self.model_config.get('traffic_llm_engine', {})
+        self.model_name = llm_cfg.get('primary_model', 'gemini-2.5-flash-lite')
+        self.temperature = llm_cfg.get('temperature', 0.2)
+        self.timeout = llm_cfg.get('timeout_seconds', 8.0)
         self.api_key = os.getenv("GEMINI_API_KEY", "")
         self.la_sensor_map = {}
         self.sd_sensor_map = {}
         self._load_sensor_maps()
+
+    def _load_model_config(self) -> dict:
+        """Load model hyper-parameters from model_config.yaml."""
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_config.yaml')
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cfg = yaml.safe_load(f)
+                    print(f"[+] LLM Engine: Loaded model_config.yaml ({cfg.get('traffic_llm_engine', {}).get('primary_model')})")
+                    return cfg
+            except Exception as e:
+                print(f"[!] Failed to parse model_config.yaml: {e}")
+        return {}
 
     def _load_sensor_maps(self):
         """Load real-world sensor location maps for location-aware LLM reasoning."""

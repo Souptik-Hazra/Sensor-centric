@@ -5,6 +5,7 @@ import sys
 import os
 import json
 import requests
+import yaml
 import numpy as np
 import pandas as pd
 
@@ -90,6 +91,20 @@ def load_all_data():
     global state_data
     print("Loading EquiTraffic-GPT Datasets & Universal PeMS Topologies...")
     
+    # 0. Load Backend & Model YAML Configurations
+    backend_cfg_path = os.path.join(os.path.dirname(__file__), 'backend_config.yaml')
+    model_cfg_path = os.path.join(os.path.dirname(__file__), 'model_config.yaml')
+    
+    if os.path.exists(backend_cfg_path):
+        with open(backend_cfg_path, 'r', encoding='utf-8') as f:
+            state_data["backend_config"] = yaml.safe_load(f)
+            print("[+] Loaded backend_config.yaml into runtime state.")
+
+    if os.path.exists(model_cfg_path):
+        with open(model_cfg_path, 'r', encoding='utf-8') as f:
+            state_data["model_config"] = yaml.safe_load(f)
+            print("[+] Loaded model_config.yaml into runtime state.")
+
     # 1. Load Pareto Frontier Results
     pareto_csv = os.path.join(data_dir, 'pareto_frontier_results.csv')
     if os.path.exists(pareto_csv):
