@@ -14,13 +14,34 @@ const INITIAL_MESSAGES = [
   }
 ];
 
-export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
+export default function LlmChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [inputPrompt, setInputPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastAlertStep, setLastAlertStep] = useState(-1);
   const messagesEndRef = useRef(null);
+  
+  // Sync state with MapView
+  const [currentStep, setCurrentStep] = useState(96);
+  const [selectedCity, setSelectedCity] = useState('la');
+  const [currentDate, setCurrentDate] = useState('2012-03-15');
+  const [originNodeId, setOriginNodeId] = useState(0);
+  const [destinationNodeId, setDestinationNodeId] = useState(15);
+
+  useEffect(() => {
+    const handleStateSync = (e) => {
+      if (e.detail) {
+        if (e.detail.step !== undefined) setCurrentStep(e.detail.step);
+        if (e.detail.city !== undefined) setSelectedCity(e.detail.city);
+        if (e.detail.date !== undefined) setCurrentDate(e.detail.date);
+        if (e.detail.origin_id !== undefined) setOriginNodeId(e.detail.origin_id);
+        if (e.detail.destination_id !== undefined) setDestinationNodeId(e.detail.destination_id);
+      }
+    };
+    window.addEventListener('app-state-sync', handleStateSync);
+    return () => window.removeEventListener('app-state-sync', handleStateSync);
+  }, []);
 
   const getDisplayTime = useCallback((step) => {
     const totalMinutes = step * 5;
@@ -46,25 +67,24 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
     const timeLabel = getDisplayTime(stepVal);
     try {
       let response;
+      const payload = {
+        prompt: `auto_alert 15-minute alert for ${timeLabel}`,
+        sensor_id: 0,
+        city: selectedCity,
+        time_label: timeLabel,
+        date_label: currentDate
+      };
       try {
         response = await fetch('/api/llm/reasoning', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: `auto_alert 15-minute alert for ${timeLabel}`,
-            sensor_id: 0,
-            city: selectedCity
-          })
+          body: JSON.stringify(payload)
         });
       } catch (e) {
         response = await fetch('http://127.0.0.1:8000/api/llm/reasoning', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: `auto_alert 15-minute alert for ${timeLabel}`,
-            sensor_id: 0,
-            city: selectedCity
-          })
+          body: JSON.stringify(payload)
         });
       }
 
@@ -111,25 +131,27 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
 
     try {
       let response;
+      const payload = {
+        prompt: textToSend,
+        sensor_id: originNodeId,
+        origin_id: originNodeId,
+        destination_id: destinationNodeId,
+        city: selectedCity,
+        time_label: getDisplayTime(currentStep),
+        date_label: currentDate
+      };
+      
       try {
         response = await fetch('/api/llm/reasoning', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: textToSend,
-            sensor_id: 0,
-            city: selectedCity
-          })
+          body: JSON.stringify(payload)
         });
       } catch (e) {
         response = await fetch('http://127.0.0.1:8000/api/llm/reasoning', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: textToSend,
-            sensor_id: 0,
-            city: selectedCity
-          })
+          body: JSON.stringify(payload)
         });
       }
 

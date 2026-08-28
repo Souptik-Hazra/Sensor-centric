@@ -238,10 +238,43 @@ a:focus-visible,
   box-shadow: var(--shadow-glow-cyan);
 }
 
+.ui-btn-purple {
+  background: rgba(147, 51, 234, 0.15);
+  border: 1px solid rgba(147, 51, 234, 0.5);
+  color: #c084fc;
+  padding: 8px 14px;
+}
+.ui-btn-purple:hover {
+  background: rgba(147, 51, 234, 0.25);
+  box-shadow: var(--shadow-glow-purple);
+}
 
+.ui-btn-purple-active {
+  background: var(--brand-purple);
+  color: #ffffff;
+  padding: 8px 14px;
+  box-shadow: var(--shadow-glow-purple);
+}
 
+.ui-btn-play {
+  background: var(--status-fast-bg);
+  border: 1px solid var(--status-fast);
+  color: var(--status-fast);
+  padding: 8px 14px;
+}
+.ui-btn-play:hover {
+  background: rgba(46, 204, 113, 0.25);
+}
 
-
+.ui-btn-pause {
+  background: var(--status-slow-bg);
+  border: 1px solid var(--status-slow);
+  color: var(--status-slow);
+  padding: 8px 14px;
+}
+.ui-btn-pause:hover {
+  background: rgba(231, 76, 60, 0.25);
+}
 /* ==========================================================================
    5. BADGES, ALERTS & TYPOGRAPHY
    ========================================================================== */
@@ -398,9 +431,29 @@ a:focus-visible,
 /* ==========================================================================
    7. FORM CONTROLS & SCROLLBARS
    ========================================================================== */
-.ui-select-dark,
+.ui-select-dark {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
 
-.ui-select-dark:focus,
+.ui-select-dark:focus {
+  border-color: var(--brand-sky);
+  box-shadow: var(--shadow-glow-cyan);
+}
 
 .ui-range-slider {
   width: 100%;

@@ -178,7 +178,7 @@ def load_all_data():
             
             sensor_data = {
                 "id": idx,
-                "sensor_id": sid,
+                "sensor_id": str(pems_id),
                 "node_index": idx,
                 "lat": float(lat),
                 "lon": float(lon),
@@ -362,6 +362,11 @@ class LLMQueryRequest(BaseModel):
     prompt: str = Field(..., description="User prompt or highway query", json_schema_extra={"example": "Why is I-5 South congested?"})
     sensor_id: int = Field(default=0, description="Associated sensor node ID")
     city: str = Field(default="la", description="Target city identifier")
+    time_label: str = Field(default="08:15 AM", description="Simulated current time")
+    date_label: str = Field(default="2012-03-15", description="Simulated current date")
+    step: int = Field(default=96, description="Simulated time step index")
+    origin_id: int = Field(default=0, description="Active route origin ID")
+    destination_id: int = Field(default=15, description="Active route destination ID")
 
 
 # ==============================================================================
@@ -552,20 +557,26 @@ def plan_smart_route(req: RouteRequest):
         pems_set = set(pems_ids)
         
         filtered = df_dists[df_dists['from'].isin(pems_set) & df_dists['to'].isin(pems_set) & (df_dists['from'] != df_dists['to'])]
-        for _, r in filtered.iterrows():
-            cost = float(r['cost'])
-            if cost <= 1800.0:  # Strict 1.8km road-following threshold (forces route to follow exact blue highway lines)
-                u = pems_to_idx[r['from']]
-                v = pems_to_idx[r['to']]
-                if u < len(sensors) and v < len(sensors):
-                    speed_v = max(10.0, sensors[v].get("speed", 55.0))
-                    speed_u = max(10.0, sensors[u].get("speed", 55.0))
-                    dist_miles = cost / 1609.34
-                    travel_time_v = (dist_miles / speed_v) * 60.0
-                    travel_time_u = (dist_miles / speed_u) * 60.0
-                    
-                    graph[u].append((v, travel_time_v, dist_miles, speed_v))
-                    graph[v].append((u, travel_time_u, dist_miles, speed_u))
+        
+        # Ensure the routing graph exactly matches the visual map edges (Top 3 closest neighbors per node) to guarantee connectivity
+        edges_set = set()
+        for sid in pems_set:
+            sub = filtered[filtered['from'] == sid].sort_values('cost')
+            for _, r in sub.head(3).iterrows():
+                edges_set.add((int(r['from']), int(r['to']), float(r['cost'])))
+                
+        for u_pems, v_pems, cost in edges_set:
+            u = pems_to_idx[u_pems]
+            v = pems_to_idx[v_pems]
+            if u < len(sensors) and v < len(sensors):
+                speed_v = max(10.0, sensors[v].get("speed", 55.0))
+                speed_u = max(10.0, sensors[u].get("speed", 55.0))
+                dist_miles = cost / 1609.34
+                travel_time_v = (dist_miles / speed_v) * 60.0
+                travel_time_u = (dist_miles / speed_u) * 60.0
+                
+                graph[u].append((v, travel_time_v, dist_miles, speed_v))
+                graph[v].append((u, travel_time_u, dist_miles, speed_u))
 
     pq = [(0.0, o_idx, [o_idx])]
     visited = set()
@@ -588,14 +599,17 @@ def plan_smart_route(req: RouteRequest):
                 heapq.heappush(pq, (cost + weight, neighbor, path + [neighbor]))
 
     if not best_path:
+        print(f"[DEBUG] Dijkstra failed to find path from {o_idx} to {d_idx}")
         best_path = [o_idx, d_idx]
         dist_m = haversine_miles(origin["lat"], origin["lon"], destination["lat"], destination["lon"])
         total_time_min = (dist_m / 45.0) * 60.0
         total_dist_miles = dist_m
     else:
+        print(f"[DEBUG] Dijkstra found best_path: {best_path}")
         total_dist_miles = sum(haversine_miles(id_to_sensor[best_path[k]]["lat"], id_to_sensor[best_path[k]]["lon"], id_to_sensor[best_path[k+1]]["lat"], id_to_sensor[best_path[k+1]]["lon"]) for k in range(len(best_path)-1))
 
     primary_path_coords = [[id_to_sensor[nid]["lat"], id_to_sensor[nid]["lon"]] for nid in best_path]
+    print(f"[DEBUG] primary_path_coords length: {len(primary_path_coords)}")
     
     # Build road-snapped route from pre-cached OSRM road geometry segments
     road_cache = city_data.get("road_cache", {})
@@ -604,11 +618,13 @@ def plan_smart_route(req: RouteRequest):
         for k in range(len(best_path) - 1):
             u_sid = sensors[best_path[k]].get("sensor_id", best_path[k])
             v_sid = sensors[best_path[k+1]].get("sensor_id", best_path[k+1])
-            cache_key = f"{min(u_sid, v_sid)}-{max(u_sid, v_sid)}"
+            cache_key = f"{min(int(u_sid), int(v_sid))}-{max(int(u_sid), int(v_sid))}"
+            if k == 0:
+                print(f"[DEBUG] Trying cache_key: '{cache_key}' (in cache: {cache_key in road_cache})")
             if cache_key in road_cache:
                 segment = road_cache[cache_key]
                 # Reverse if needed so direction matches u -> v
-                if u_sid > v_sid:
+                if int(u_sid) > int(v_sid):
                     segment = list(reversed(segment))
                 # Skip first point of subsequent segments to avoid duplicates
                 if road_snapped:
@@ -624,6 +640,7 @@ def plan_smart_route(req: RouteRequest):
                     road_snapped.append(primary_path_coords[k+1])
         if road_snapped:
             primary_path_coords = road_snapped
+            print(f"[DEBUG] road_snapped length: {len(road_snapped)}")
     elif len(primary_path_coords) >= 2:
         # Fallback: live OSRM call if no cache available
         try:
@@ -799,18 +816,27 @@ def llm_causal_reasoning(req: LLMQueryRequest):
     route_keywords = ["shortest path", "best route", "route between", "path between", "path from", "route from",
                       "navigate from", "navigate to", "direction from", "direction to", "how to go from",
                       "show route", "show path", "find route", "find path", "shortest route"]
-    is_route_query = any(kw in prompt_lower for kw in route_keywords)
+    
+    # Also trigger if user just types "node 1 to 15" or "1 to 2"
+    direct_node_pattern = r'(?:node|sensor|#)?\s*\b(\d+)\b\s*(?:to|and|-|->)\s*(?:node|sensor|#)?\s*\b(\d+)\b'
+    direct_match = re.search(direct_node_pattern, prompt_lower)
+    
+    is_route_query = any(kw in prompt_lower for kw in route_keywords) or bool(direct_match)
     
     # Extract sensor/node IDs from the prompt
     route_result_data = None
     if is_route_query:
-        # Try to find node numbers like "node 5", "sensor 10", "#5", "from 5 to 10"
-        node_matches = re.findall(r'(?:node|sensor|#)\s*(\d+)', prompt_lower)
-        if len(node_matches) < 2:
-            # Try plain number pairs like "from 5 to 10" or "between 5 and 10"
-            num_matches = re.findall(r'\b(\d+)\b', req.prompt)
-            if len(num_matches) >= 2:
-                node_matches = num_matches[:2]
+        node_matches = []
+        if direct_match:
+            node_matches = [direct_match.group(1), direct_match.group(2)]
+        else:
+            # Try to find node numbers like "node 5", "sensor 10", "#5"
+            node_matches = re.findall(r'(?:node|sensor|#)\s*(\d+)', prompt_lower)
+            if len(node_matches) < 2:
+                # Try plain number pairs
+                num_matches = re.findall(r'\b(\d+)\b', req.prompt)
+                if len(num_matches) >= 2:
+                    node_matches = num_matches[:2]
         
         if len(node_matches) >= 2:
             o_id = int(node_matches[0])
@@ -845,8 +871,33 @@ def llm_causal_reasoning(req: LLMQueryRequest):
             downstream_sensor_ids.append(di)
 
     speed = selected_sensor.get("speed", 55.0)
+    predicted_speed = speed - 5.0
     rel = selected_sensor.get("reliability", 0.92) * 100.0
     status_label = selected_sensor.get("status", "HEALTHY")
+
+    # Fetch actual real-time speeds and GWNet predictions from the tensor if available
+    his_data = state_data.get("his_npz_sd") if city_key == "sd" else state_data.get("his_npz_la")
+    if his_data is not None:
+        try:
+            T_max = his_data.shape[0]
+            current_idx = max(0, min(T_max - 24, req.step))
+            speed_val = float(his_data[current_idx, node_idx, 0])
+            if -5.0 < speed_val < 5.0:
+                speed = max(10.0, min(75.0, 58.0 + (speed_val * 12.5)))
+            else:
+                speed = speed_val
+
+            future_idx = current_idx + 3  # 15 minutes ahead
+            pred_val = float(his_data[future_idx, node_idx, 0])
+            if -5.0 < pred_val < 5.0:
+                predicted_speed = max(10.0, min(75.0, 58.0 + (pred_val * 12.5)))
+            else:
+                predicted_speed = pred_val
+                
+            if speed < 30.0 or predicted_speed < 30.0:
+                status_label = "CONGESTED"
+        except Exception as e:
+            print(f"[!] LLM Engine: Error pulling tensor step data: {e}")
 
     # If this is a route query and we have route data, generate route-specific LLM response
     if route_result_data and route_result_data.get("recommended_path_coords"):
@@ -891,10 +942,15 @@ def llm_causal_reasoning(req: LLMQueryRequest):
         prompt=req.prompt,
         sensor_id=real_sensor_id,
         speed=speed,
+        predicted_speed=predicted_speed,
         rel=rel,
         status=status_label,
         downstream_nodes=downstream_sensor_ids,
-        city=city_key
+        city=city_key,
+        time_label=req.time_label,
+        date_label=req.date_label,
+        origin_id=req.origin_id,
+        destination_id=req.destination_id
     )
 
     return {

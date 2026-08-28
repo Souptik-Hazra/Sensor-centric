@@ -62,6 +62,19 @@ export default function MapView() {
   const [llmResponse, setLlmResponse] = useState(null);
   const [isLlmLoading, setIsLlmLoading] = useState(false);
 
+  // Sync state to LlmChatbot via event
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('app-state-sync', {
+      detail: { 
+        step: step, 
+        city: selectedCity, 
+        date: date,
+        origin_id: originNodeId,
+        destination_id: destinationNodeId
+      }
+    }));
+  }, [step, selectedCity, date, originNodeId, destinationNodeId]);
+
   // Listen for LLM chatbot route results (cross-component event)
   useEffect(() => {
     const handleLlmRoute = (e) => {

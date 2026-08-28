@@ -2,6 +2,22 @@ import React from 'react';
 import { Bot, AlertTriangle } from 'lucide-react';
 import styles from '../LlmChatbot.module.css';
 
+const parseMarkdown = (text) => {
+  if (!text) return '';
+  let html = text;
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h3 style="color: #00f2fe; margin-top: 10px; margin-bottom: 5px;">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 style="color: #00f2fe; margin-top: 10px; margin-bottom: 5px;">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 style="color: #00f2fe; margin-top: 10px; margin-bottom: 5px;">$1</h1>');
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #fff;">$1</strong>');
+  // Italic
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // Bullets
+  html = html.replace(/^[\*-]\s+(.*$)/gim, '• $1');
+  return html;
+};
+
 const ChatMessageList = ({ messages, isLoading, messagesEndRef }) => {
   return (
     <div className={styles.messagesList}>
@@ -20,9 +36,10 @@ const ChatMessageList = ({ messages, isLoading, messagesEndRef }) => {
                 <span className={styles.msgTime}>{msg.time}</span>
               </div>
             )}
-            <div className={`${styles.msgContent} ui-whitespace-preline`}>
-              {msg.text}
-            </div>
+            <div 
+              className={`${styles.msgContent} ui-whitespace-preline`}
+              dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.text) }}
+            />
             {msg.sender === 'user' && (
               <div className={styles.userTime}>{msg.time}</div>
             )}

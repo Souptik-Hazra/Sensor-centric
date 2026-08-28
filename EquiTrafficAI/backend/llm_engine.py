@@ -2,12 +2,15 @@ import os
 import json
 import requests
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class GeminiFlashLiteLLMEngine:
     def __init__(self):
         self.model_config = self._load_model_config()
         llm_cfg = self.model_config.get('traffic_llm_engine', {})
-        self.model_name = llm_cfg.get('primary_model', 'gemini-2.5-flash-lite')
+        self.model_name = os.getenv("GEMINI_MODEL", llm_cfg.get('primary_model', 'gemini-2.5-flash-lite'))
         self.temperature = llm_cfg.get('temperature', 0.2)
         self.timeout = llm_cfg.get('timeout_seconds', 8.0)
         self.api_key = os.getenv("GEMINI_API_KEY", "")
@@ -62,7 +65,7 @@ class GeminiFlashLiteLLMEngine:
                 labels.append(f"Sensor #{nid}")
         return ", ".join(labels) if labels else "Downstream Corridor"
 
-    def generate_causal_reasoning(self, prompt: str, sensor_id: int, speed: float, rel: float, status: str, downstream_nodes: list, city: str = "la", time_label: str = "08:15 AM") -> str:
+    def generate_causal_reasoning(self, prompt: str, sensor_id: int, speed: float, predicted_speed: float, rel: float, status: str, downstream_nodes: list, city: str = "la", time_label: str = "08:15 AM", date_label: str = "2012-03-15", origin_id: int = 0, destination_id: int = 15) -> str:
         # Real-world location lookup
         sensor_loc = self._get_sensor_location(sensor_id, city)
         freeway = sensor_loc.get("freeway", "Highway Corridor")
@@ -70,25 +73,41 @@ class GeminiFlashLiteLLMEngine:
         neighborhood = sensor_loc.get("neighborhood", "")
         landmark = sensor_loc.get("nearest_landmark", "")
         location_label = sensor_loc.get("location_label", f"Node #{sensor_id}")
+        lat = sensor_loc.get("lat", "Unknown")
+        lon = sensor_loc.get("lon", "Unknown")
+
+        origin_loc = self._get_sensor_location(origin_id, city)
+        dest_loc = self._get_sensor_location(destination_id, city)
+        origin_label = origin_loc.get("location_label", f"Sensor #{origin_id}")
+        dest_label = dest_loc.get("location_label", f"Sensor #{destination_id}")
         
         downstream_str = self._get_downstream_locations(downstream_nodes, city)
         city_name = "Los Angeles METR-LA" if city == "la" else ("San Diego SD400" if city == "sd" else f"PeMS Dataset ({city.upper()})")
 
-        system_prompt = (
-            f"You are EquiTraffic-GPT Smart Reroute Copilot, powered by Gemini Flash 2.5 Lite.\n\n"
-            f"Live Telemetry Context ({time_label}):\n"
-            f"- Corridor: {city_name}\n"
-            f"- Sensor #{sensor_id}: Located on **{freeway} {direction}** near **{neighborhood}**"
-            + (f" (near {landmark})" if landmark else "") + f"\n"
-            f"- Current Speed: {speed:.1f} mph | Status: {status}\n"
-            f"- GWNet 15-min Forecast Horizon: Active\n"
-            f"- Downstream Sensors: {downstream_str}\n\n"
-            f"User Query: {prompt}\n\n"
-            f"Provide practical rerouting advice comparing historical same-time patterns:\n"
-            f"1. Pattern Analysis vs Historical Baseline for {time_label}\n"
-            f"2. Specific Paths to Avoid (actual freeway corridors)\n"
-            f"3. Recommended Alternate Reroute (actual alternate roads) & Time Saved."
-        )
+        system_prompt = f"""You are EquiTraffic-GPT, a highly advanced AI Traffic Copilot for the {city_name} highway network.
+
+### LIVE TELEMETRY CONTEXT
+- Current Time: {date_label} at {time_label}
+- Active Planned Route: From **{origin_label}** to **{dest_label}**
+- Currently Selected Sensor (Node #{sensor_id}): {freeway} {direction} near {neighborhood} {f'(near {landmark})' if landmark else ''}
+- Exact GPS Location: Lat {lat}, Lon {lon}
+- Current Actual Speed: {speed:.1f} mph (Status: {status})
+- Graph WaveNet (GWNet) 15-Minute Neural Forecast: {predicted_speed:.1f} mph
+- Downstream Corridor: {downstream_str}
+
+### INSTRUCTIONS
+You must analyze the user's query and respond intelligently based on the telemetry context above. Follow these exact rules:
+
+1. **Direct Answering**: If the user asks a simple question (e.g., "what time is it?", "what is my origin?"), answer it directly and conversationally in 1-2 sentences. DO NOT generate a massive traffic report.
+2. **Context Awareness**: You know the user's exact origin and destination. Never say "depending on your exact location"—you have their exact GPS and sensor data above.
+3. **Advanced Rerouting**: ONLY IF the user explicitly asks for traffic advice, a reroute, or why it's slow, generate a detailed 3-part markdown report:
+   - **### 1. GWNet Pattern Analysis**: Compare the current speed ({speed:.1f} mph) to the 15-min future neural prediction ({predicted_speed:.1f} mph). Explain if a bottleneck is forming.
+   - **### 2. Specific Paths to Avoid**: Identify the exact highway mainlanes to avoid.
+   - **### 3. Recommended Alternate Reroute**: Use the provided GPS coordinates to suggest exact, real-world parallel surface streets or alternate highways. Be highly specific.
+4. **Tone**: Professional, authoritative, and helpful. Use markdown formatting (bolding key street names and metrics).
+
+User Query: {prompt}
+"""
 
         # 1. Live Gemini Flash Lite API Call
         if self.api_key:
@@ -102,7 +121,7 @@ class GeminiFlashLiteLLMEngine:
                     if candidates:
                         content_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                         if content_text:
-                            return f"⚡ **EquiTraffic-GPT (Smart Reroute Copilot)**\n🛡️ *[Safety Filter Active: Route Capacity Verified]*\n📍 Sensor #{sensor_id} on **{location_label}**\n\n" + content_text
+                            return content_text
             except Exception as e:
                 print(f"[Gemini API Exception] {e}")
 
@@ -142,7 +161,7 @@ class GeminiFlashLiteLLMEngine:
             return (
                 f"⚡ **EquiTraffic-GPT (Smart Reroute Copilot)**\n"
                 f"🛡️ *[Safety Filter Active: Route Capacity Verified]*\n"
-                f"📍 Sensor #{sensor_id} on **{location_label}**\n\n"
+                f"📍 Location: **{location_label}**\n\n"
                 f"🏟️ **Event Ingress Reroute Advisory**\n"
                 f"**Event Location**: {stadium_info}\n\n"
                 f"• **Pattern vs Normal Days**: Ingress volume on **{freeway}** is 65% higher than normal non-event days for {time_label}.\n"
@@ -155,10 +174,10 @@ class GeminiFlashLiteLLMEngine:
         elif any(w in prompt_lower for w in ["block", "accident", "closure", "crash", "lane", "police", "incident"]):
             return (
                 f"⚡ **EquiTraffic-GPT (Smart Reroute Copilot)**\n"
-                f"📍 Sensor #{sensor_id} on **{location_label}**\n\n"
+                f"📍 Location: **{location_label}**\n\n"
                 f"🚧 **Emergency Road Blockade & Reroute Advisory**\n\n"
                 f"• **Pattern Breakdown**: Sudden unexpected stop on **{freeway} {direction}** near **{neighborhood}** ({speed:.1f} mph vs typical 58 mph).\n"
-                f"• **Blocked Path**: ❌ **{freeway} {direction}** mainlanes at Sensor #{sensor_id}.\n"
+                f"• **Blocked Path**: ❌ **{freeway} {direction}** mainlanes.\n"
                 f"• **Recommended Reroute**: ✅ Take the immediate exit to **{downstream_str}** frontage arterial bypass.\n"
                 f"• **Estimated Time Saved**: ⏱️ **Saves 24 minutes** of queueing delay!"
             )
@@ -179,7 +198,7 @@ class GeminiFlashLiteLLMEngine:
         else:
             return (
                 f"⚡ **EquiTraffic-GPT (Smart Reroute Copilot)**\n"
-                f"📍 Sensor #{sensor_id} on **{location_label}** ({time_label})\n\n"
+                f"📍 Location: **{location_label}** ({time_label})\n\n"
                 f"• **Pattern Analysis**: Comparing current speeds on **{freeway} {direction}** near **{neighborhood}** against historical baselines for {time_label}.\n"
                 f"• **Paths to Avoid**: Avoid heavy throttle on congested ramps leading to **{downstream_str}**.\n"
                 f"• **Recommended Action if Starting Now**: Use parallel frontage bypass roads if current speed drops below 30 mph.\n"
