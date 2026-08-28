@@ -533,15 +533,25 @@ def plan_smart_route(req: RouteRequest):
     destination = next((s for s in sensors if s.get("id") == req.destination_id or s.get("sensor_id") == req.destination_id), sensors[min(10, len(sensors)-1)])
 
     o_idx, d_idx = origin.get("id", 0), destination.get("id", 10)
-    if o_idx == d_idx and len(sensors) > 1:
-        d_idx = (o_idx + 1) % len(sensors)
-        destination = sensors[d_idx]
 
     def haversine_miles(lat1, lon1, lat2, lon2):
         R = 3958.8
         dlat, dlon = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
         a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
         return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    # Parse target time to tensor index to get LIVE speeds
+    target_idx = 96
+    try:
+        from datetime import datetime
+        t = datetime.strptime(req.target_time, "%I:%M %p")
+        target_idx = int(t.hour * 12 + t.minute / 5)
+    except Exception:
+        pass
+
+    his_key = f"his_npz_{'sd' if city_key == 'sd' else 'la'}"
+    his_npz = state_data.get(his_key)
+    live_speeds = his_npz[target_idx, :, 0] if his_npz is not None and target_idx < his_npz.shape[0] else None
 
     # A* Search over spatial graph
     graph = {s["id"]: [] for s in sensors}
@@ -565,38 +575,80 @@ def plan_smart_route(req: RouteRequest):
             for _, r in sub.head(3).iterrows():
                 edges_set.add((int(r['from']), int(r['to']), float(r['cost'])))
                 
+        road_cache = city_data.get("road_cache", {})
+        
         for u_pems, v_pems, cost in edges_set:
             u = pems_to_idx[u_pems]
             v = pems_to_idx[v_pems]
             if u < len(sensors) and v < len(sensors):
-                speed_v = max(10.0, sensors[v].get("speed", 55.0))
-                speed_u = max(10.0, sensors[u].get("speed", 55.0))
                 dist_miles = cost / 1609.34
+                
+                # Use TRUE geometric driving distance to accurately penalize median-jumps and U-turns!
+                cache_key = f"{min(int(u_pems), int(v_pems))}-{max(int(u_pems), int(v_pems))}"
+                if cache_key in road_cache:
+                    segment = road_cache[cache_key]
+                    true_dist_miles = sum(haversine_miles(segment[i][0], segment[i][1], segment[i+1][0], segment[i+1][1]) for i in range(len(segment)-1))
+                    dist_miles = max(dist_miles, true_dist_miles)
+
+                speed_v_static = max(10.0, sensors[v].get("speed", 55.0))
+                speed_u_static = max(10.0, sensors[u].get("speed", 55.0))
+                
+                speed_v = float(live_speeds[v]) if live_speeds is not None and v < len(live_speeds) else speed_v_static
+                if math.isnan(speed_v) or speed_v <= 0: speed_v = speed_v_static
+                
+                speed_u = float(live_speeds[u]) if live_speeds is not None and u < len(live_speeds) else speed_u_static
+                if math.isnan(speed_u) or speed_u <= 0: speed_u = speed_u_static
+                
+                speed_v = max(10.0, speed_v)
+                speed_u = max(10.0, speed_u)
+                
                 travel_time_v = (dist_miles / speed_v) * 60.0
                 travel_time_u = (dist_miles / speed_u) * 60.0
                 
                 graph[u].append((v, travel_time_v, dist_miles, speed_v))
                 graph[v].append((u, travel_time_u, dist_miles, speed_u))
 
-    pq = [(0.0, o_idx, [o_idx])]
-    visited = set()
-    best_path = None
-    total_time_min = 0.0
+    if o_idx == d_idx:
+        # Edge case: Origin is the same as Destination
+        best_path = [o_idx]
+        total_time_min = 0.0
+        total_dist_miles = 0.0
+    else:
+        # True A* Search (g(n) + h(n))
+        def heuristic(u_id):
+            """Optimistic travel time heuristic (straight-line at 85 mph for strict admissibility)"""
+            dist_m = haversine_miles(id_to_sensor[u_id]["lat"], id_to_sensor[u_id]["lon"], 
+                                     id_to_sensor[d_idx]["lat"], id_to_sensor[d_idx]["lon"])
+            return (dist_m / 85.0) * 60.0
 
-    while pq:
-        cost, curr, path = heapq.heappop(pq)
-        if curr in visited:
-            continue
-        visited.add(curr)
+        # pq stores: (f_score, g_score, curr_node)
+        pq = [(heuristic(o_idx), 0.0, o_idx)]
+        g_scores = {o_idx: 0.0}
+        came_from = {}
+        best_path = None
+        total_time_min = 0.0
 
-        if curr == d_idx:
-            best_path = path
-            total_time_min = cost
-            break
+        while pq:
+            f_score, g_score, curr = heapq.heappop(pq)
 
-        for neighbor, weight, dist, _ in graph.get(curr, []):
-            if neighbor not in visited:
-                heapq.heappush(pq, (cost + weight, neighbor, path + [neighbor]))
+            if curr == d_idx:
+                path = []
+                temp = curr
+                while temp in came_from:
+                    path.append(temp)
+                    temp = came_from[temp]
+                path.append(o_idx)
+                best_path = list(reversed(path))
+                total_time_min = g_score
+                break
+
+            for neighbor, weight, dist, _ in graph.get(curr, []):
+                g_new = g_score + weight
+                if neighbor not in g_scores or g_new < g_scores[neighbor]:
+                    came_from[neighbor] = curr
+                    g_scores[neighbor] = g_new
+                    f_new = g_new + heuristic(neighbor)
+                    heapq.heappush(pq, (f_new, g_new, neighbor))
 
     if not best_path:
         print(f"[DEBUG] Dijkstra failed to find path from {o_idx} to {d_idx}")
@@ -623,8 +675,13 @@ def plan_smart_route(req: RouteRequest):
                 print(f"[DEBUG] Trying cache_key: '{cache_key}' (in cache: {cache_key in road_cache})")
             if cache_key in road_cache:
                 segment = road_cache[cache_key]
-                # Reverse if needed so direction matches u -> v
-                if int(u_sid) > int(v_sid):
+                # Determine correct segment direction spatially
+                u_lat, u_lon = id_to_sensor[best_path[k]]["lat"], id_to_sensor[best_path[k]]["lon"]
+                dist_to_start = haversine_miles(u_lat, u_lon, segment[0][0], segment[0][1])
+                dist_to_end = haversine_miles(u_lat, u_lon, segment[-1][0], segment[-1][1])
+                
+                # If the end of the segment is closer to our start node, it means the segment was cached backwards
+                if dist_to_end < dist_to_start:
                     segment = list(reversed(segment))
                 # Skip first point of subsequent segments to avoid duplicates
                 if road_snapped:
@@ -650,7 +707,7 @@ def plan_smart_route(req: RouteRequest):
                 sampled.append(primary_path_coords[-1])
             loc_str = ';'.join([f"{lon:.5f},{lat:.5f}" for lat, lon in sampled])
             osrm_url = f"http://router.project-osrm.org/route/v1/driving/{loc_str}?overview=full&geometries=geojson"
-            resp = requests.get(osrm_url, timeout=2.5)
+            resp = requests.get(osrm_url, timeout=5.0)
             if resp.status_code == 200:
                 osrm_data = resp.json()
                 if osrm_data.get("routes") and len(osrm_data["routes"]) > 0:
@@ -659,7 +716,11 @@ def plan_smart_route(req: RouteRequest):
         except Exception:
             pass
 
-    primary_speeds = [id_to_sensor[nid].get("speed", 55.0) for nid in best_path]
+    if live_speeds is not None:
+        primary_speeds = [max(10.0, float(live_speeds[nid])) if nid < len(live_speeds) else id_to_sensor[nid].get("speed", 55.0) for nid in best_path]
+    else:
+        primary_speeds = [id_to_sensor[nid].get("speed", 55.0) for nid in best_path]
+
     avg_speed_mph = float(np.mean(primary_speeds)) if primary_speeds else 45.0
     has_bottleneck = any(sp < 30.0 for sp in primary_speeds)
 

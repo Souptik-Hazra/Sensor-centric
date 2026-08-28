@@ -89,15 +89,19 @@ const RouteControlPanel = ({
           </button>
         </div>
 
-        {routeResult && (
+        {routeResult && routeResult.primary_route && (
           <div className="ui-result-card">
             <div className="text-cyan mb-4 flex-row-gap8">
               <Clock size={13} /> {routeResult.recommended_departure_time || 'Depart in 5 mins'}
             </div>
-            <div className="ui-pareto-stat">Distance: <strong>{routeResult.total_distance_miles ?? routeResult.distance_miles ?? 4.2} miles</strong></div>
-            <div className="ui-pareto-stat">Est. Travel Time: <strong>{routeResult.estimated_travel_time_mins ?? routeResult.estimated_travel_time_min ?? 14} mins</strong></div>
+            <div className="ui-pareto-stat">Distance: <strong>{routeResult.primary_route.distance_miles ?? 4.2} miles</strong></div>
+            <div className="ui-pareto-stat">Est. Travel Time: <strong>{routeResult.primary_route.travel_time_minutes ?? 14} mins</strong></div>
             <div className="ui-text-savings">
-              ⚡ {routeResult.time_saved_msg || `Saves ${routeResult.estimated_time_saved_mins ?? 6} mins by avoiding bottleneck links!`}
+              {routeResult.recommended_alternate_route?.estimated_time_saved_minutes > 0 ? (
+                <>⚡ {routeResult.time_saved_msg || `Saves ${routeResult.recommended_alternate_route.estimated_time_saved_minutes} mins by avoiding bottleneck links!`}</>
+              ) : (
+                <span className="text-emerald">✨ Route is clear. No alternate reroute needed!</span>
+              )}
             </div>
           </div>
         )}
