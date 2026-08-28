@@ -1,6 +1,6 @@
-# 🚗 EquiTraffic-GPT Google Colab Training Export
+# 🚗 EquiTraffic-GPT METR-LA Google Colab Training Export
 
-This standalone directory contains everything required to train, evaluate, and export PyTorch Graph WaveNet (GWNet) GNN models on **Google Colab** or any GPU cloud server.
+This standalone directory contains everything required to train, evaluate, and export PyTorch Graph WaveNet (GWNet) GNN models for the **METR-LA Highway Dataset (207 Sensors)** on **Google Colab** GPU.
 
 ---
 
@@ -8,36 +8,32 @@ This standalone directory contains everything required to train, evaluate, and e
 
 ```text
 colab_export/
-├── EquiTraffic_GWNet_Training.ipynb   # Standalone Google Colab Training Notebook
+├── EquiTraffic_GWNet_Training.ipynb   # METR-LA Google Colab Dissertation Training Notebook
+├── README_COLAB.md                    # Setup & Execution Guide
 ├── code/                              # GWNet GNN Python Modules
-│   ├── gwnet_model.py
-│   ├── gwnet_dataset.py
-│   ├── gwnet_loss.py
-│   ├── gwnet_trainer.py
-│   ├── gwnet_adapter.py
-│   ├── gwnet_registry.py
-│   ├── precompute_adjacency.py
-│   └── model_config.yaml
-├── data/                              # Datasets & Adjacency Matrices
-│   ├── metr_la_metrics.csv
-│   ├── sensor_locations.csv
-│   ├── distances.csv
-│   ├── metr_la_his.npz
-│   ├── sd_meta.csv
-│   ├── sd400_his.npz
-│   ├── adj_metr_la.pkl
-│   └── adj_sd400.pkl
-└── checkpoints/                       # Saving Location for Checkpoint Weights
+│   ├── gwnet_model.py                 # Graph WaveNet Neural Architecture
+│   ├── gwnet_dataset.py               # METR-LA Sequences & Spatial Adjacency Loader
+│   ├── gwnet_loss.py                  # MAE, RMSE, MAPE, and R2 Evaluation Metrics
+│   ├── gwnet_trainer.py               # PyTorch 2.x MLOps Model Trainer Engine
+│   ├── gwnet_adapter.py               # Universal PeMS Serving Adapter
+│   ├── gwnet_registry.py              # MLOps Model Version Registry Manifest
+│   └── model_config.yaml              # GNN Model Configuration Parameters
+├── data/                              # METR-LA Highway Sensors Dataset (207 Nodes)
+│   ├── metr_la_metrics.csv            # Sensor Metadata & Persistence Errors
+│   ├── sensor_locations.csv          # METR-LA Latitude/Longitude Coordinates
+│   ├── distances.csv                  # Directed Spatial Graph Distance Matrix
+│   ├── metr_la_his.npz                # Spatial-Temporal Speed Tensor (23,974 timesteps)
+│   └── adj_metr_la.pkl                # Precomputed Binary Spatial Adjacency Matrix
+└── checkpoints/                       # Model Weights Output Hierarchy
     └── v1.0.1/
-        ├── metr_la/
-        └── sd400/
+        └── metr_la/                   # Saved PyTorch (.pt) Model Checkpoints
 ```
 
 ---
 
 ### 🚀 How to Run on Google Colab:
 
-1. Upload the entire `colab_export/` folder to your **Google Drive** or clone your GitHub repository.
-2. Open `EquiTraffic_GWNet_Training.ipynb` in Google Colab.
-3. Select **Runtime -> Change runtime type -> T4 GPU**.
-4. Run all cells to train Graph WaveNet GNN models and save model weights (`.pt`) to `checkpoints/`.
+1. Open **Google Colab** (`colab.research.google.com`).
+2. Select **Runtime -> Change runtime type -> T4 GPU**.
+3. Open `EquiTraffic_GWNet_Training.ipynb` and click **Runtime -> Run all** (`Ctrl + F9`).
+4. Training logs report **MAE (mph)**, **RMSE (mph)**, **MAPE (%)**, and **R²** determination coefficient for dissertation verification.

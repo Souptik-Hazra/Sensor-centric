@@ -70,3 +70,19 @@ def calculate_r2_score(y_pred, y_true):
         return 1.0
     r2 = 1.0 - (ss_res / ss_tot)
     return float(r2.item())
+
+
+def calculate_all_metrics(real_preds_mph, real_targets_mph):
+    """Calculates all 4 standard dissertation evaluation metrics: MAE (mph), RMSE (mph), MAPE (%), and R2."""
+    mae = float(np.mean(np.abs(real_preds_mph - real_targets_mph)))
+    rmse = float(np.sqrt(np.mean((real_preds_mph - real_targets_mph) ** 2)))
+    
+    # Avoid zero division in MAPE
+    non_zero_mask = real_targets_mph > 1.0
+    if np.sum(non_zero_mask) > 0:
+        mape = float(np.mean(np.abs((real_targets_mph[non_zero_mask] - real_preds_mph[non_zero_mask]) / real_targets_mph[non_zero_mask])) * 100.0)
+    else:
+        mape = 0.0
+        
+    r2 = calculate_r2_score(torch.tensor(real_preds_mph), torch.tensor(real_targets_mph))
+    return {"mae": mae, "rmse": rmse, "mape": mape, "r2": r2}

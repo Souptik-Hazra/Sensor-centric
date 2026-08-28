@@ -18,7 +18,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset
 
 from gwnet_model import GraphWaveNet
-from gwnet_loss import SmartRerouteLoss, calculate_r2_score
+from gwnet_loss import SmartRerouteLoss, calculate_r2_score, calculate_all_metrics
 from gwnet_dataset import build_adj_matrix_from_distances, load_pems_sequences, load_pems_adjacency
 from gwnet_registry import get_next_version, register_model_version
 
@@ -156,8 +156,8 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
         real_preds_mph = val_preds_arr * speed_std + speed_mean
         real_targets_mph = val_targets_arr * speed_std + speed_mean
 
-        true_mae_mph = float(np.mean(np.abs(real_preds_mph - real_targets_mph)))
-        r2 = calculate_r2_score(torch.tensor(real_preds_mph), torch.tensor(real_targets_mph))
+        m = calculate_all_metrics(real_preds_mph, real_targets_mph)
+        true_mae_mph, true_rmse_mph, true_mape_pct, r2 = m["mae"], m["rmse"], m["mape"], m["r2"]
         epoch_sec = time.time() - t0
 
         if avg_val_mae < best_val_mae:
@@ -178,7 +178,7 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
                 'use_attn': use_attn
             }, versioned_tar_path)
 
-            metrics = {"val_mae": round(float(best_val_mae), 4), "val_mae_mph": round(float(true_mae_mph), 2), "val_r2": round(float(r2), 4)}
+            metrics = {"val_mae": round(float(best_val_mae), 4), "val_mae_mph": round(float(true_mae_mph), 2), "val_rmse_mph": round(float(true_rmse_mph), 2), "val_mape_pct": round(float(true_mape_pct), 2), "val_r2": round(float(r2), 4)}
             hparams = {"in_dim": 3, "horizon": 12, "batch_size": batch_size, "lr": lr, "stride": stride, "alpha": loss_cfg.get('alpha', 3.0), "beta": loss_cfg.get('beta', 1.5), "use_attn": use_attn}
             register_model_version(dataset_name, version_str, versioned_pt_path, versioned_tar_path, metrics, hparams)
             status = f"[SAVED {version_str}]"
@@ -186,7 +186,7 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
             patience_counter += 1
             status = f"[Patience {patience_counter}/{patience}]"
 
-        log_msg = f"Epoch {epoch:<3} | Train: {avg_train_mae:<6.4f} | Val Norm: {avg_val_mae:<6.4f} | Val MPH: {true_mae_mph:<6.2f}mph | R²: {r2:<6.4f} | {epoch_sec:<6.2f}s | {status}\n"
+        log_msg = f"Epoch {epoch:<3} | Train: {avg_train_mae:<6.4f} | MAE: {true_mae_mph:<5.2f}mph | RMSE: {true_rmse_mph:<5.2f}mph | MAPE: {true_mape_pct:<5.2f}% | R²: {r2:<6.4f} | {epoch_sec:<5.2f}s | {status}\n"
         sys.stdout.write(log_msg)
         sys.stdout.flush()
 
