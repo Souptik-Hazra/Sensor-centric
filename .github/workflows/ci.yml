@@ -76,7 +76,7 @@ jobs:
       - name: Install Python Backend & ML Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install fastapi uvicorn requests numpy pandas pyyaml torch
+          pip install fastapi uvicorn requests numpy pandas pyyaml torch google-genai
 
       - name: Validate Backend & Model YAML Schemas
         run: |
@@ -101,11 +101,17 @@ jobs:
           sys.path.insert(0, os.path.abspath('EquiTrafficAI/backend'))
           sys.path.insert(0, os.path.abspath('EquiTrafficAI/gwnet'))
           
-          # 1. Test LLM Engine Dynamic YAML Model Configuration
+          # 1. Test LLM Engine Dynamic YAML Model Configuration and Prompt Template
           from llm_engine import GeminiFlashLiteLLMEngine
           llm = GeminiFlashLiteLLMEngine()
           assert llm.model_name == 'gemini-2.5-flash-lite', f'LLM Model Name Mismatch: {llm.model_name}'
-          print('[SUCCESS] [ML Check 1/4] Gemini 2.5 Flash Lite LLM Engine initialized dynamically from model_config.yaml!')
+          
+          # Test LLM Prompt Generation Logic (Prevents Hallucination Template Regressions)
+          mock_prompt = llm._build_system_prompt('la', '716328', 12.5, 45.0)
+          assert 'EquiTraffic-GPT' in mock_prompt
+          assert '716328' in mock_prompt
+          assert '12.5' in mock_prompt
+          print('[SUCCESS] [ML Check 1/4] Gemini 2.5 Flash Lite LLM Engine and Persona Prompt Template verified!')
 
           # 2. Test Graph WaveNet Dynamic Metadata Resolution (207 and 716 nodes)
           from gwnet_adapter import UniversalPeMSAdapter
