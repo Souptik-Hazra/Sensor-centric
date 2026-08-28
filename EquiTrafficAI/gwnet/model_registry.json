@@ -2,7 +2,7 @@
   "active_version": "v1.0.0",
   "datasets": {
     "metr_la": {
-      "active_version": "v1.0.3",
+      "active_version": "v1.0.0",
       "versions": {
         "v1.0.0": {
           "dataset": "metr_la",

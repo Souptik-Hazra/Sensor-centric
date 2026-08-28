@@ -15,6 +15,10 @@
   width: 100%;
 }
 
+.darkTileLayer {
+  filter: brightness(0.5) invert(1) grayscale(1) contrast(2.5);
+}
+
 .mapHeaderOverlay {
   position: absolute;
   top: 16px;

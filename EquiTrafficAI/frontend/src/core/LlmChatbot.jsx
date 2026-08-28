@@ -141,6 +141,13 @@ export default function LlmChatbot({ currentStep = 96, selectedCity = 'la' }) {
           time: getDisplayTime(currentStep)
         };
         setMessages(prev => [...prev, botMsg]);
+        
+        // If LLM returned route coords, dispatch event so MapView renders the path
+        if (data.recommended_path_coords || data.route_result) {
+          window.dispatchEvent(new CustomEvent('llm-route-result', { 
+            detail: data.route_result || { recommended_path_coords: data.recommended_path_coords, congested_avoid_coords: [] }
+          }));
+        }
       } else {
         throw new Error('API response not ok');
       }

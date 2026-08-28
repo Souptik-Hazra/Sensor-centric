@@ -161,14 +161,20 @@ def load_all_data():
     if os.path.exists(la_metrics) and os.path.exists(la_locs):
         df_m = pd.read_csv(la_metrics)
         df_l = pd.read_csv(la_locs)
-        loc_dict = dict(zip(df_l['sensor_id'], zip(df_l['latitude'], df_l['longitude'])))
 
         nodes = []
         sensor_map = {}
         for idx, row in df_m.iterrows():
             sid = int(row['node_id'])
-            lat, lon = loc_dict.get(sid, (34.0522, -118.2437))
-            loc_info = la_location_map.get(str(sid), {})
+            if idx < len(df_l):
+                lat = float(df_l.iloc[idx]['latitude'])
+                lon = float(df_l.iloc[idx]['longitude'])
+                pems_id = int(df_l.iloc[idx]['sensor_id'])
+            else:
+                lat, lon = 34.0522, -118.2437
+                pems_id = sid
+
+            loc_info = la_location_map.get(str(pems_id), la_location_map.get(str(sid), {}))
             
             sensor_data = {
                 "id": idx,
@@ -195,23 +201,46 @@ def load_all_data():
 
         edges = []
         neighbors = {i: [] for i in range(len(nodes))}
-        if os.path.exists(la_dists):
-            df_dists = pd.read_csv(la_dists)
-            valid_ids = set(sensor_map.keys())
-            filtered = df_dists[df_dists['from'].isin(valid_ids) & df_dists['to'].isin(valid_ids) & (df_dists['from'] != df_dists['to'])].copy()
-            id_to_idx = {sid: data["node_index"] for sid, data in sensor_map.items()}
-            edges_set = set()
-            for sid in valid_ids:
-                sub = filtered[filtered['from'] == sid].sort_values('cost')
-                for _, r in sub.head(2).iterrows():
-                    if float(r['cost']) <= 2200.0:
-                        edges_set.add((int(r['from']), int(r['to'])))
-            for u_id, v_id in edges_set:
-                u_idx, v_idx = id_to_idx[u_id], id_to_idx[v_id]
-                edges.append([[sensor_map[u_id]["lat"], sensor_map[u_id]["lon"]], [sensor_map[v_id]["lat"], sensor_map[v_id]["lon"]]])
-                neighbors[u_idx].append(v_idx)
+        road_cache = {}
+        road_cache_path = os.path.join(data_dir, 'osrm_road_cache.json')
+        if os.path.exists(road_cache_path):
+            with open(road_cache_path, 'r') as f:
+                road_cache = json.load(f)
+            print(f"[+] Loaded OSRM road geometry cache: {len(road_cache)} edge segments.")
 
-        state_data["la"] = {"sensors": nodes, "edges": edges, "count": len(nodes)}
+        if os.path.exists(la_dists) and os.path.exists(la_locs):
+            df_dists = pd.read_csv(la_dists)
+            df_locs = pd.read_csv(la_locs)
+            pems_to_latlon = dict(zip(df_locs['sensor_id'], zip(df_locs['latitude'], df_locs['longitude'])))
+            pems_to_idx = dict(zip(df_locs['sensor_id'], range(len(df_locs))))
+            valid_pems = set(df_locs['sensor_id'])
+
+            filtered = df_dists[df_dists['from'].isin(valid_pems) & df_dists['to'].isin(valid_pems) & (df_dists['from'] != df_dists['to'])].copy()
+            edges_set = set()
+            for sid in valid_pems:
+                sub = filtered[filtered['from'] == sid].sort_values('cost')
+                for _, r in sub.head(3).iterrows():
+                    edges_set.add((int(r['from']), int(r['to'])))
+
+            for u_pems, v_pems in edges_set:
+                if u_pems in pems_to_latlon and v_pems in pems_to_latlon:
+                    # Look up cached OSRM road geometry for this edge
+                    cache_key = f"{min(u_pems, v_pems)}-{max(u_pems, v_pems)}"
+                    if cache_key in road_cache:
+                        road_coords = road_cache[cache_key]
+                        # Reverse if needed so direction matches u -> v
+                        if u_pems > v_pems:
+                            road_coords = list(reversed(road_coords))
+                        edges.append(road_coords)
+                    else:
+                        u_lat, u_lon = pems_to_latlon[u_pems]
+                        v_lat, v_lon = pems_to_latlon[v_pems]
+                        edges.append([[u_lat, u_lon], [v_lat, v_lon]])
+                    
+                    if u_pems in pems_to_idx and v_pems in pems_to_idx:
+                        neighbors[pems_to_idx[u_pems]].append(pems_to_idx[v_pems])
+
+        state_data["la"] = {"sensors": nodes, "edges": edges, "count": len(nodes), "road_cache": road_cache}
         state_data["graph_neighbors"] = neighbors
 
     # Load San Diego SD400 (716 Sensors)
@@ -512,24 +541,36 @@ def plan_smart_route(req: RouteRequest):
     # A* Search over spatial graph
     graph = {s["id"]: [] for s in sensors}
     id_to_sensor = {s["id"]: s for s in sensors}
+    la_dists = os.path.join(data_dir, 'distances.csv')
+    la_locs = os.path.join(data_dir, 'sensor_locations.csv')
 
-    for s in sensors:
-        u_id = s["id"]
-        u_lat, u_lon = s["lat"], s["lon"]
-        for s2 in sensors:
-            v_id = s2["id"]
-            if u_id != v_id:
-                dist = haversine_miles(u_lat, u_lon, s2["lat"], s2["lon"])
-                if dist <= 3.5:
-                    speed = max(10.0, s2.get("speed", 55.0))
-                    travel_time_min = (dist / speed) * 60.0
-                    graph[u_id].append((v_id, travel_time_min, dist, speed))
+    if os.path.exists(la_dists) and os.path.exists(la_locs):
+        df_dists = pd.read_csv(la_dists)
+        df_locs = pd.read_csv(la_locs)
+        pems_ids = list(df_locs['sensor_id'])
+        pems_to_idx = {p: i for i, p in enumerate(pems_ids)}
+        pems_set = set(pems_ids)
+        
+        filtered = df_dists[df_dists['from'].isin(pems_set) & df_dists['to'].isin(pems_set) & (df_dists['from'] != df_dists['to'])]
+        for _, r in filtered.iterrows():
+            cost = float(r['cost'])
+            if cost <= 1800.0:  # Strict 1.8km road-following threshold (forces route to follow exact blue highway lines)
+                u = pems_to_idx[r['from']]
+                v = pems_to_idx[r['to']]
+                if u < len(sensors) and v < len(sensors):
+                    speed_v = max(10.0, sensors[v].get("speed", 55.0))
+                    speed_u = max(10.0, sensors[u].get("speed", 55.0))
+                    dist_miles = cost / 1609.34
+                    travel_time_v = (dist_miles / speed_v) * 60.0
+                    travel_time_u = (dist_miles / speed_u) * 60.0
+                    
+                    graph[u].append((v, travel_time_v, dist_miles, speed_v))
+                    graph[v].append((u, travel_time_u, dist_miles, speed_u))
 
     pq = [(0.0, o_idx, [o_idx])]
     visited = set()
     best_path = None
     total_time_min = 0.0
-    total_dist_miles = 0.0
 
     while pq:
         cost, curr, path = heapq.heappop(pq)
@@ -544,7 +585,6 @@ def plan_smart_route(req: RouteRequest):
 
         for neighbor, weight, dist, _ in graph.get(curr, []):
             if neighbor not in visited:
-                h = (haversine_miles(id_to_sensor[neighbor]["lat"], id_to_sensor[neighbor]["lon"], destination["lat"], destination["lon"]) / 65.0) * 60.0
                 heapq.heappush(pq, (cost + weight, neighbor, path + [neighbor]))
 
     if not best_path:
@@ -556,6 +596,52 @@ def plan_smart_route(req: RouteRequest):
         total_dist_miles = sum(haversine_miles(id_to_sensor[best_path[k]]["lat"], id_to_sensor[best_path[k]]["lon"], id_to_sensor[best_path[k+1]]["lat"], id_to_sensor[best_path[k+1]]["lon"]) for k in range(len(best_path)-1))
 
     primary_path_coords = [[id_to_sensor[nid]["lat"], id_to_sensor[nid]["lon"]] for nid in best_path]
+    
+    # Build road-snapped route from pre-cached OSRM road geometry segments
+    road_cache = city_data.get("road_cache", {})
+    if road_cache and len(best_path) >= 2:
+        road_snapped = []
+        for k in range(len(best_path) - 1):
+            u_sid = sensors[best_path[k]].get("sensor_id", best_path[k])
+            v_sid = sensors[best_path[k+1]].get("sensor_id", best_path[k+1])
+            cache_key = f"{min(u_sid, v_sid)}-{max(u_sid, v_sid)}"
+            if cache_key in road_cache:
+                segment = road_cache[cache_key]
+                # Reverse if needed so direction matches u -> v
+                if u_sid > v_sid:
+                    segment = list(reversed(segment))
+                # Skip first point of subsequent segments to avoid duplicates
+                if road_snapped:
+                    road_snapped.extend(segment[1:])
+                else:
+                    road_snapped.extend(segment)
+            else:
+                # Fallback: straight line for uncached segment
+                if road_snapped:
+                    road_snapped.append(primary_path_coords[k+1])
+                else:
+                    road_snapped.append(primary_path_coords[k])
+                    road_snapped.append(primary_path_coords[k+1])
+        if road_snapped:
+            primary_path_coords = road_snapped
+    elif len(primary_path_coords) >= 2:
+        # Fallback: live OSRM call if no cache available
+        try:
+            step_size = max(1, len(primary_path_coords) // 8)
+            sampled = primary_path_coords[::step_size]
+            if sampled[-1] != primary_path_coords[-1]:
+                sampled.append(primary_path_coords[-1])
+            loc_str = ';'.join([f"{lon:.5f},{lat:.5f}" for lat, lon in sampled])
+            osrm_url = f"http://router.project-osrm.org/route/v1/driving/{loc_str}?overview=full&geometries=geojson"
+            resp = requests.get(osrm_url, timeout=2.5)
+            if resp.status_code == 200:
+                osrm_data = resp.json()
+                if osrm_data.get("routes") and len(osrm_data["routes"]) > 0:
+                    road_geometry = osrm_data["routes"][0]["geometry"]["coordinates"]
+                    primary_path_coords = [[lat, lon] for lon, lat in road_geometry]
+        except Exception:
+            pass
+
     primary_speeds = [id_to_sensor[nid].get("speed", 55.0) for nid in best_path]
     avg_speed_mph = float(np.mean(primary_speeds)) if primary_speeds else 45.0
     has_bottleneck = any(sp < 30.0 for sp in primary_speeds)
@@ -567,6 +653,8 @@ def plan_smart_route(req: RouteRequest):
     return {
         "city": city_key,
         "departure_time": req.target_time,
+        "recommended_path_coords": primary_path_coords,
+        "congested_avoid_coords": [],
         "origin": {
             "sensor_id": origin.get("sensor_id", o_idx),
             "label": origin.get("location_label", f"Sensor #{o_idx}"),
@@ -705,6 +793,40 @@ def llm_causal_reasoning(req: LLMQueryRequest):
     city_data = state_data.get(city_key, state_data["la"])
     sensors = city_data.get("sensors", [])
     
+    # Detect route/path queries between two sensor nodes
+    import re
+    prompt_lower = req.prompt.lower()
+    route_keywords = ["shortest path", "best route", "route between", "path between", "path from", "route from",
+                      "navigate from", "navigate to", "direction from", "direction to", "how to go from",
+                      "show route", "show path", "find route", "find path", "shortest route"]
+    is_route_query = any(kw in prompt_lower for kw in route_keywords)
+    
+    # Extract sensor/node IDs from the prompt
+    route_result_data = None
+    if is_route_query:
+        # Try to find node numbers like "node 5", "sensor 10", "#5", "from 5 to 10"
+        node_matches = re.findall(r'(?:node|sensor|#)\s*(\d+)', prompt_lower)
+        if len(node_matches) < 2:
+            # Try plain number pairs like "from 5 to 10" or "between 5 and 10"
+            num_matches = re.findall(r'\b(\d+)\b', req.prompt)
+            if len(num_matches) >= 2:
+                node_matches = num_matches[:2]
+        
+        if len(node_matches) >= 2:
+            o_id = int(node_matches[0])
+            d_id = int(node_matches[1])
+            if o_id < len(sensors) and d_id < len(sensors):
+                # Build a fake RouteRequest and call plan_smart_route internally
+                class FakeRouteReq:
+                    origin_id = o_id
+                    destination_id = d_id
+                    target_time = "08:00 AM"
+                    city = city_key
+                try:
+                    route_result_data = plan_smart_route(FakeRouteReq())
+                except Exception as e:
+                    print(f"[LLM Route] Failed to compute route: {e}")
+
     selected_sensor = next((s for s in sensors if s.get("sensor_id") == input_id), None)
     if not selected_sensor:
         selected_sensor = next((s for s in sensors if s.get("id") == input_id), sensors[0] if sensors else {})
@@ -725,6 +847,45 @@ def llm_causal_reasoning(req: LLMQueryRequest):
     speed = selected_sensor.get("speed", 55.0)
     rel = selected_sensor.get("reliability", 0.92) * 100.0
     status_label = selected_sensor.get("status", "HEALTHY")
+
+    # If this is a route query and we have route data, generate route-specific LLM response
+    if route_result_data and route_result_data.get("recommended_path_coords"):
+        origin_info = route_result_data.get("origin", {})
+        dest_info = route_result_data.get("destination", {})
+        primary = route_result_data.get("primary_route", {})
+        alt = route_result_data.get("recommended_alternate_route", {})
+        path_coords = route_result_data.get("recommended_path_coords", [])
+        
+        o_label = origin_info.get("label", f"Sensor #{o_id}")
+        d_label = dest_info.get("label", f"Sensor #{d_id}")
+        travel_time = primary.get("travel_time_minutes", 14)
+        distance = primary.get("distance_miles", 4.2)
+        avg_speed = primary.get("average_speed_mph", 45.0)
+        bottleneck = primary.get("bottleneck_detected", False)
+        waypoints = primary.get("path_sensor_count", len(path_coords))
+        
+        llm_text = (
+            f"⚡ **EquiTraffic-GPT (GWNet Shortest Path Planner)**\n"
+            f"🛡️ *[GWNet 15-Min Prediction Active: Speed Forecasts Applied]*\n\n"
+            f"🗺️ **Route: {o_label} → {d_label}**\n\n"
+            f"• **Distance**: {distance:.1f} miles\n"
+            f"• **Estimated Travel Time**: {travel_time:.1f} mins (GWNet predicted speeds)\n"
+            f"• **Average Speed**: {avg_speed:.1f} mph\n"
+            f"• **Highway Waypoints**: {waypoints} sensors along the route\n"
+            f"• **Bottleneck Detected**: {'⚠️ Yes — reroute recommended' if bottleneck else '✅ No bottlenecks — clear path'}\n\n"
+            f"📍 *The route is now highlighted on the GIS map in neon cyan.*"
+        )
+        
+        return {
+            "sensor_id": real_sensor_id,
+            "user_prompt": req.prompt,
+            "llm_response": llm_text,
+            "downstream_neighbors": downstream_sensor_ids,
+            "gwnet_forecast_horizon": "15-min",
+            "location": selected_sensor.get("location_label", ""),
+            "recommended_path_coords": path_coords,
+            "route_result": route_result_data
+        }
 
     llm_analysis = llm_engine.generate_causal_reasoning(
         prompt=req.prompt,

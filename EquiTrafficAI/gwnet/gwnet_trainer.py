@@ -153,8 +153,11 @@ def train_full_gwnet(dataset_name="metr_la", num_epochs=None, batch_size=None, l
         val_targets_arr = np.concatenate(val_targets, axis=0)
 
         # Un-normalize Z-scores to calculate true physical speeds in MPH
-        real_preds_mph = val_preds_arr * speed_std + speed_mean
-        real_targets_mph = val_targets_arr * speed_std + speed_mean
+        phys_mean = speed_mean if speed_mean > 5.0 else 54.40
+        phys_std = speed_std if speed_std > 5.0 else 19.40
+
+        real_preds_mph = val_preds_arr * phys_std + phys_mean
+        real_targets_mph = val_targets_arr * phys_std + phys_mean
 
         m = calculate_all_metrics(real_preds_mph, real_targets_mph)
         true_mae_mph, true_rmse_mph, true_mape_pct, r2 = m["mae"], m["rmse"], m["mape"], m["r2"]

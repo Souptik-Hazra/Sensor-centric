@@ -12,7 +12,7 @@ import MapMarkerLayer from './components/MapMarkerLayer';
 import simulationData from '../../core/simulationData.json';
 const { empiricalProfiles } = simulationData;
 
-const CARTO_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const CARTO_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 function MapResizeHandler({ isRightSidebarOpen }) {
   const map = useMap();
@@ -61,6 +61,17 @@ export default function MapView() {
   const [llmPrompt, setLlmPrompt] = useState('');
   const [llmResponse, setLlmResponse] = useState(null);
   const [isLlmLoading, setIsLlmLoading] = useState(false);
+
+  // Listen for LLM chatbot route results (cross-component event)
+  useEffect(() => {
+    const handleLlmRoute = (e) => {
+      if (e.detail) {
+        setRouteResult(e.detail);
+      }
+    };
+    window.addEventListener('llm-route-result', handleLlmRoute);
+    return () => window.removeEventListener('llm-route-result', handleLlmRoute);
+  }, []);
 
   // Fetch City Datasets
   useEffect(() => {
@@ -161,13 +172,15 @@ export default function MapView() {
 
   const calculateSmartRoute = useCallback(async (oId, dId) => {
     setIsRouting(true);
+    const actualOrigin = oId !== undefined ? oId : originNodeId;
+    const actualDest = dId !== undefined ? dId : destinationNodeId;
     try {
       const response = await fetch('/api/route/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          origin_id: oId,
-          destination_id: dId,
+          origin_id: actualOrigin,
+          destination_id: actualDest,
           target_time: targetArrivalTime,
           city: selectedCity
         })
@@ -181,7 +194,7 @@ export default function MapView() {
     } finally {
       setIsRouting(false);
     }
-  }, [targetArrivalTime, selectedCity]);
+  }, [targetArrivalTime, selectedCity, originNodeId, destinationNodeId]);
 
   const runLlmQuery = useCallback(async (customPrompt = '') => {
     setIsLlmLoading(true);
@@ -237,7 +250,8 @@ export default function MapView() {
         <MapContainer key={selectedCity} center={mapCenter} zoom={selectedCity === 'sd' ? 10 : 11} preferCanvas={true} style={{ height: "100%", width: "100%" }} zoomControl={false}>
           <MapResizeHandler isRightSidebarOpen={isRightSidebarOpen} />
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+            className={styles.darkTileLayer}
+            attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
             url={CARTO_URL}
           />
           {showEdges && edges.map((edge, idx) => (
@@ -248,14 +262,17 @@ export default function MapView() {
             />
           ))}
 
-          {/* HIGHLIGHTED RECOMMENDED ROUTE EDGES (Clean Neon Cyan Path) */}
-          {routeResult && routeResult.recommended_path_coords && routeResult.recommended_path_coords.map((pair, idx) => (
+          {/* HIGHLIGHTED RECOMMENDED ROUTE EDGES (Clean Continuous Neon Cyan Path) */}
+          {routeResult && routeResult.recommended_path_coords && (
             <Polyline
-              key={`rec-${idx}`}
-              positions={pair}
-              pathOptions={{ color: '#00e5ff', weight: 4, opacity: 0.9 }}
+              positions={
+                Array.isArray(routeResult.recommended_path_coords[0]?.[0])
+                  ? routeResult.recommended_path_coords.map(pair => pair).flat()
+                  : routeResult.recommended_path_coords
+              }
+              pathOptions={{ color: '#00f2fe', weight: 7, opacity: 1.0, lineCap: 'round', lineJoin: 'round' }}
             />
-          ))}
+          )}
 
           {/* HIGHLIGHTED CONGESTED BOTTLENECK EDGES TO AVOID (Pulsing Crimson Red) */}
           {routeResult && routeResult.congested_avoid_coords && routeResult.congested_avoid_coords.map((pair, idx) => (
