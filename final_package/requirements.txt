@@ -5,6 +5,13 @@
 
 # --- Deep Learning & GNN Model Training (DCRNN, GWNet, DLinear, HA) ---
 torch>=2.0.0                    # PyTorch tensor engine (CPU/GPU)
+fastapi>=0.115.0                # REST API server
+uvicorn>=0.30.0                 # ASGI server
+python-dotenv>=1.0.0            # Environment configuration
+PyYAML>=6.0                     # YAML configuration
+langchain-core>=0.3.0           # Provider-neutral LLM interface
+langchain-google-genai>=2.0.0  # Gemini LangChain adapter
+langchain-groq>=0.2.0         # Groq LangChain adapter
 
 # --- Scientific Computing & SIMD Vectorization ---
 numpy>=1.23.0                   # C-level SIMD array operations & matrix broadcasting

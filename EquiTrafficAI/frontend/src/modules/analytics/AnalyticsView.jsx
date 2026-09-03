@@ -4,6 +4,7 @@ import styles from './AnalyticsView.module.css';
 import ExecutiveMetricsGrid from './components/ExecutiveMetricsGrid';
 import ParetoFrontierMatrix from './components/ParetoFrontierMatrix';
 import SpeedTrendSvgChart from './components/SpeedTrendSvgChart';
+import { fetchModelHealth, diagnoseSensor, fetchPolicy } from '../../services/apiService';
 
 const AnalyticsView = () => {
   const [selectedCity, setSelectedCity] = useState('la');
@@ -54,28 +55,29 @@ const AnalyticsView = () => {
   };
 
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [modelHealth, setModelHealth] = useState(null);
+  const [causalData, setCausalData] = useState(null);
+  const [policyData, setPolicyData] = useState(null);
 
   useEffect(() => {
     const fetchAnalyticsMetrics = async () => {
       try {
-        const res = await fetch(`/api/analytics/metrics?city=${selectedCity}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAnalyticsData(data);
-        }
+        const [metricsResult, healthResult, causalResult, policyResult] = await Promise.allSettled([
+          fetch(`/api/analytics/metrics?city=${selectedCity}`).then((r) => r.json()),
+          fetchModelHealth(),
+          diagnoseSensor(0, selectedCity),
+          fetchPolicy('equity')
+        ]);
+        if (metricsResult.status === 'fulfilled') setAnalyticsData(metricsResult.value);
+        if (healthResult.status === 'fulfilled') setModelHealth(healthResult.value);
+        if (causalResult.status === 'fulfilled') setCausalData(causalResult.value);
+        if (policyResult.status === 'fulfilled') setPolicyData(policyResult.value);
       } catch (err) {
         console.error("Failed to fetch analytics metrics:", err);
       }
     };
     fetchAnalyticsMetrics();
   }, [selectedCity]);
-
-  const paretoPoints = analyticsData?.pareto_matrix || [
-    { strategy: "DCRNN Baseline", mae: 2.77, rsf: 0.38, color: "#ef4444", status: "DOMINATED" },
-    { strategy: "FairSTG Baseline", mae: 2.45, rsf: 0.28, color: "#f59e0b", status: "SUB-OPTIMAL" },
-    { strategy: "GWNet (Suburban Equity)", mae: 2.15, rsf: 0.14, color: "#a855f7", status: "PARETO OPTIMAL" },
-    { strategy: "GWNet (Max Throughput)", mae: 1.82, rsf: 0.22, color: "#38bdf8", status: "PARETO OPTIMAL" }
-  ];
 
   return (
     <div className={styles.pageContainer}>
@@ -123,7 +125,39 @@ const AnalyticsView = () => {
       />
 
       {/* Feature 2: Pareto Frontier Trade-Off Cards Sub-Component */}
-      <ParetoFrontierMatrix />
+      <ParetoFrontierMatrix points={analyticsData?.pareto_matrix} />
+
+      <div className="ui-pareto-grid mt-20">
+        <div className="ui-card-glass">
+          <h3 className="ui-section-title text-cyan">Model Readiness</h3>
+          {modelHealth ? Object.entries(modelHealth).map(([name, model]) => (
+            <div key={name} className="ui-pareto-stat">
+              <strong>{name.toUpperCase()}</strong>: {model.checkpoint_loaded ? 'Ready' : 'Unavailable'}
+              {model.error ? <div className="ui-section-desc">{model.error}</div> : null}
+            </div>
+          )) : <div className="ui-section-desc">Loading model status...</div>}
+        </div>
+        <div className="ui-card-glass">
+          <h3 className="ui-section-title text-purple">Causal Diagnosis</h3>
+          {causalData ? (
+            <>
+              <div className="ui-pareto-stat">Sensor: <strong>{causalData.sensor_id}</strong></div>
+              <div className="ui-pareto-stat">Current speed: <strong>{causalData.current_speed_mph} mph</strong></div>
+              <div className="ui-pareto-stat">Indirect reliability effect: <strong>{causalData.causal_scm_breakdown?.indirect_reliability_contribution_pct ?? causalData.causal_scm_breakdown?.ctf_indirect_effect_reliability_ctf_ie_r}</strong></div>
+            </>
+          ) : <div className="ui-section-desc">Loading causal diagnosis...</div>}
+        </div>
+        <div className="ui-card-glass">
+          <h3 className="ui-section-title text-emerald">Active Policy</h3>
+          {policyData ? (
+            <>
+              <div className="ui-pareto-stat">Goal: <strong>{policyData.user_goal}</strong></div>
+              <div className="ui-pareto-stat">Paradigm: <strong>{policyData.reliability_paradigm}</strong></div>
+              <div className="ui-section-desc">{policyData.policy_explanation}</div>
+            </>
+          ) : <div className="ui-section-desc">Loading policy...</div>}
+        </div>
+      </div>
 
     </div>
   );

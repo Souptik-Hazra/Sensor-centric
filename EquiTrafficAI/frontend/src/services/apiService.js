@@ -36,7 +36,7 @@ export const fetchSensors = async (city = "la") => {
 
 export const fetchTrafficState = async (timestampIndex = 0, city = "la") => {
   try {
-    const res = await fetch(`${BACKEND_URL}/api/predict/congestion_15min?city=${city}`);
+    const res = await fetch(`${BACKEND_URL}/api/predict/congestion_15min?city=${encodeURIComponent(city)}&timestamp_index=${timestampIndex}`);
     if (res.ok) {
       const data = await res.json();
       return {
@@ -64,4 +64,30 @@ export const planSmartRoute = async (originId, destId, city = "la") => {
     console.error("Route planning fetch error:", err);
   }
   return null;
+};
+
+export const fetchModelHealth = async () => {
+  const res = await fetch(`${BACKEND_URL}/api/health/models`);
+  if (!res.ok) throw new Error(`Model health request failed: ${res.status}`);
+  return res.json();
+};
+
+export const diagnoseSensor = async (sensorId, city = "la") => {
+  const res = await fetch(`${BACKEND_URL}/api/diagnose/causal`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sensor_id: sensorId, city })
+  });
+  if (!res.ok) throw new Error(`Causal diagnosis request failed: ${res.status}`);
+  return res.json();
+};
+
+export const fetchPolicy = async (goal = "equity") => {
+  const res = await fetch(`${BACKEND_URL}/api/policy/pareto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goal })
+  });
+  if (!res.ok) throw new Error(`Policy request failed: ${res.status}`);
+  return res.json();
 };

@@ -2,9 +2,8 @@ from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from contextlib import asynccontextmanager
-from functools import lru_cache
 import sys
 import os
 import json
@@ -12,8 +11,8 @@ import requests
 import yaml
 import numpy as np
 import pandas as pd
-import heapq
 import math
+import networkx as nx
 
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 if backend_dir not in sys.path:
@@ -225,10 +224,12 @@ def load_all_data():
             for u_pems, v_pems in edges_set:
                 if u_pems in pems_to_latlon and v_pems in pems_to_latlon:
                     # Look up cached OSRM road geometry for this edge
-                    cache_key = f"{min(u_pems, v_pems)}-{max(u_pems, v_pems)}"
+                    cache_key = f"{int(u_pems)}-{int(v_pems)}"
+                    legacy_cache_key = f"{min(u_pems, v_pems)}-{max(u_pems, v_pems)}"
                     if cache_key in road_cache:
                         road_coords = road_cache[cache_key]
-                        # Reverse if needed so direction matches u -> v
+                    elif legacy_cache_key in road_cache:
+                        road_coords = road_cache[legacy_cache_key]
                         if u_pems > v_pems:
                             road_coords = list(reversed(road_coords))
                         edges.append(road_coords)
@@ -380,6 +381,20 @@ def get_state(city: str = Query("la", description="Target city/corridor")):
     return state_data.get(target, state_data["la"])
 
 
+@app.get("/api/health/models", tags=["Neural Forecasting & GWNet"])
+def get_model_health():
+    """Reports readiness of loaded forecasting checkpoints."""
+    return {
+        dataset: {
+            "num_nodes": adapter.num_nodes,
+            "checkpoint_loaded": getattr(adapter, "checkpoint_loaded", False),
+            "error": getattr(adapter, "checkpoint_error", None),
+            "device": str(adapter.device),
+        }
+        for dataset, adapter in gwnet_adapters.items()
+    }
+
+
 @app.get("/api/analytics/metrics", tags=["Analytics"], response_description="Dynamic Pareto Equity & Anomaly Metrics")
 def get_analytics_metrics(city: str = Query("la")):
     """Calculates real-time MAE, RSF disparity, zero-dropout rates, and Pareto frontier points."""
@@ -474,13 +489,19 @@ def predict_congestion_direct(req: ForecastRequest):
     
     if city in gwnet_adapters:
         try:
-            preds_np = gwnet_adapters[city].predict_next_15min(arr)
+            adapter = gwnet_adapters[city]
+            if not getattr(adapter, "checkpoint_loaded", False):
+                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                                    detail=f"{city.upper()} Graph WaveNet checkpoint is unavailable or incompatible.")
+            preds_np = adapter.predict_next_15min(arr)
             return {
                 "predictions": preds_np.tolist() if isinstance(preds_np, np.ndarray) else preds_np,
                 "horizon": "15-minute",
                 "sensors_evaluated": num_nodes,
                 "model": "GraphWaveNet_PyTorch2.x"
             }
+        except HTTPException:
+            raise
         except Exception as e:
             print(f"[!] GWNet PyTorch Forward Pass Notice: {e}")
 
@@ -524,13 +545,13 @@ def plan_smart_route(req: RouteRequest):
     city_key = req.city.lower()
     city_data = state_data.get(city_key, state_data["la"])
     sensors = city_data.get("sensors", [])
-    all_edges = city_data.get("edges", [])
-
     if not sensors:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No sensor data available for city '{city_key}'")
 
-    origin = next((s for s in sensors if s.get("id") == req.origin_id or s.get("sensor_id") == req.origin_id), sensors[0])
-    destination = next((s for s in sensors if s.get("id") == req.destination_id or s.get("sensor_id") == req.destination_id), sensors[min(10, len(sensors)-1)])
+    origin = next((s for s in sensors if s.get("id") == req.origin_id or s.get("sensor_id") == req.origin_id), None)
+    destination = next((s for s in sensors if s.get("id") == req.destination_id or s.get("sensor_id") == req.destination_id), None)
+    if origin is None or destination is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Origin or destination sensor was not found.")
 
     o_idx, d_idx = origin.get("id", 0), destination.get("id", 10)
 
@@ -551,10 +572,15 @@ def plan_smart_route(req: RouteRequest):
 
     his_key = f"his_npz_{'sd' if city_key == 'sd' else 'la'}"
     his_npz = state_data.get(his_key)
-    live_speeds = his_npz[target_idx, :, 0] if his_npz is not None and target_idx < his_npz.shape[0] else None
+    if his_npz is not None and his_npz.shape[0] > 0:
+        target_idx = max(0, min(target_idx, his_npz.shape[0] - 1))
+        live_speeds = his_npz[target_idx, :, 0]
+    else:
+        live_speeds = None
 
     # A* Search over spatial graph
-    graph = {s["id"]: [] for s in sensors}
+    graph = nx.DiGraph()
+    graph.add_nodes_from(s["id"] for s in sensors)
     id_to_sensor = {s["id"]: s for s in sensors}
     la_dists = os.path.join(data_dir, 'distances.csv')
     la_locs = os.path.join(data_dir, 'sensor_locations.csv')
@@ -568,12 +594,13 @@ def plan_smart_route(req: RouteRequest):
         
         filtered = df_dists[df_dists['from'].isin(pems_set) & df_dists['to'].isin(pems_set) & (df_dists['from'] != df_dists['to'])]
         
-        # Ensure the routing graph exactly matches the visual map edges (Top 3 closest neighbors per node) to guarantee connectivity
-        edges_set = set()
-        for sid in pems_set:
-            sub = filtered[filtered['from'] == sid].sort_values('cost')
-            for _, r in sub.head(3).iterrows():
-                edges_set.add((int(r['from']), int(r['to']), float(r['cost'])))
+        # Keep every valid directed edge. Limiting to three nearest neighbors can
+        # disconnect the graph and can create false reverse/U-turn routes.
+        edges_set = {
+            (int(row['from']), int(row['to']), float(row['cost']))
+            for _, row in filtered.iterrows()
+            if math.isfinite(float(row['cost'])) and float(row['cost']) > 0
+        }
                 
         road_cache = city_data.get("road_cache", {})
         
@@ -584,29 +611,35 @@ def plan_smart_route(req: RouteRequest):
                 dist_miles = cost / 1609.34
                 
                 # Use TRUE geometric driving distance to accurately penalize median-jumps and U-turns!
-                cache_key = f"{min(int(u_pems), int(v_pems))}-{max(int(u_pems), int(v_pems))}"
+                cache_key = f"{int(u_pems)}-{int(v_pems)}"
+                legacy_cache_key = f"{min(int(u_pems), int(v_pems))}-{max(int(u_pems), int(v_pems))}"
                 if cache_key in road_cache:
                     segment = road_cache[cache_key]
+                elif legacy_cache_key in road_cache:
+                    segment = road_cache[legacy_cache_key]
+                    if u_pems > v_pems:
+                        segment = list(reversed(segment))
+                else:
+                    segment = None
+                if segment is not None:
                     true_dist_miles = sum(haversine_miles(segment[i][0], segment[i][1], segment[i+1][0], segment[i+1][1]) for i in range(len(segment)-1))
                     dist_miles = max(dist_miles, true_dist_miles)
 
                 speed_v_static = max(10.0, sensors[v].get("speed", 55.0))
-                speed_u_static = max(10.0, sensors[u].get("speed", 55.0))
                 
                 speed_v = float(live_speeds[v]) if live_speeds is not None and v < len(live_speeds) else speed_v_static
                 if math.isnan(speed_v) or speed_v <= 0: speed_v = speed_v_static
                 
-                speed_u = float(live_speeds[u]) if live_speeds is not None and u < len(live_speeds) else speed_u_static
-                if math.isnan(speed_u) or speed_u <= 0: speed_u = speed_u_static
-                
                 speed_v = max(10.0, speed_v)
-                speed_u = max(10.0, speed_u)
                 
                 travel_time_v = (dist_miles / speed_v) * 60.0
-                travel_time_u = (dist_miles / speed_u) * 60.0
                 
-                graph[u].append((v, travel_time_v, dist_miles, speed_v))
-                graph[v].append((u, travel_time_u, dist_miles, speed_u))
+                graph.add_edge(
+                    u, v,
+                    weight=travel_time_v,
+                    distance_miles=dist_miles,
+                    speed_mph=speed_v,
+                )
 
     if o_idx == d_idx:
         # Edge case: Origin is the same as Destination
@@ -614,50 +647,28 @@ def plan_smart_route(req: RouteRequest):
         total_time_min = 0.0
         total_dist_miles = 0.0
     else:
-        # True A* Search (g(n) + h(n))
-        def heuristic(u_id):
-            """Optimistic travel time heuristic (straight-line at 85 mph for strict admissibility)"""
-            dist_m = haversine_miles(id_to_sensor[u_id]["lat"], id_to_sensor[u_id]["lon"], 
-                                     id_to_sensor[d_idx]["lat"], id_to_sensor[d_idx]["lon"])
+        # NetworkX A* search over the directed travel-time graph.
+        def heuristic(u_id, target_id):
+            """Optimistic travel time at 85 mph."""
+            dist_m = haversine_miles(id_to_sensor[u_id]["lat"], id_to_sensor[u_id]["lon"],
+                                     id_to_sensor[target_id]["lat"], id_to_sensor[target_id]["lon"])
             return (dist_m / 85.0) * 60.0
 
-        # pq stores: (f_score, g_score, curr_node)
-        pq = [(heuristic(o_idx), 0.0, o_idx)]
-        g_scores = {o_idx: 0.0}
-        came_from = {}
-        best_path = None
-        total_time_min = 0.0
-
-        while pq:
-            f_score, g_score, curr = heapq.heappop(pq)
-
-            if curr == d_idx:
-                path = []
-                temp = curr
-                while temp in came_from:
-                    path.append(temp)
-                    temp = came_from[temp]
-                path.append(o_idx)
-                best_path = list(reversed(path))
-                total_time_min = g_score
-                break
-
-            for neighbor, weight, dist, _ in graph.get(curr, []):
-                g_new = g_score + weight
-                if neighbor not in g_scores or g_new < g_scores[neighbor]:
-                    came_from[neighbor] = curr
-                    g_scores[neighbor] = g_new
-                    f_new = g_new + heuristic(neighbor)
-                    heapq.heappush(pq, (f_new, g_new, neighbor))
+        try:
+            best_path = nx.astar_path(graph, o_idx, d_idx, heuristic=heuristic, weight="weight")
+            total_time_min = nx.path_weight(graph, best_path, weight="weight")
+        except nx.NetworkXNoPath:
+            best_path = None
+            total_time_min = 0.0
 
     if not best_path:
-        print(f"[DEBUG] Dijkstra failed to find path from {o_idx} to {d_idx}")
+        print(f"[DEBUG] A* failed to find path from {o_idx} to {d_idx}; using straight-line fallback")
         best_path = [o_idx, d_idx]
         dist_m = haversine_miles(origin["lat"], origin["lon"], destination["lat"], destination["lon"])
         total_time_min = (dist_m / 45.0) * 60.0
         total_dist_miles = dist_m
     else:
-        print(f"[DEBUG] Dijkstra found best_path: {best_path}")
+        print(f"[DEBUG] A* found best_path: {best_path}")
         total_dist_miles = sum(haversine_miles(id_to_sensor[best_path[k]]["lat"], id_to_sensor[best_path[k]]["lon"], id_to_sensor[best_path[k+1]]["lat"], id_to_sensor[best_path[k+1]]["lon"]) for k in range(len(best_path)-1))
 
     primary_path_coords = [[id_to_sensor[nid]["lat"], id_to_sensor[nid]["lon"]] for nid in best_path]
@@ -670,10 +681,13 @@ def plan_smart_route(req: RouteRequest):
         for k in range(len(best_path) - 1):
             u_sid = sensors[best_path[k]].get("sensor_id", best_path[k])
             v_sid = sensors[best_path[k+1]].get("sensor_id", best_path[k+1])
-            cache_key = f"{min(int(u_sid), int(v_sid))}-{max(int(u_sid), int(v_sid))}"
+            cache_key = f"{int(u_sid)}-{int(v_sid)}"
+            legacy_cache_key = f"{min(int(u_sid), int(v_sid))}-{max(int(u_sid), int(v_sid))}"
             if k == 0:
-                print(f"[DEBUG] Trying cache_key: '{cache_key}' (in cache: {cache_key in road_cache})")
-            if cache_key in road_cache:
+                print(f"[DEBUG] Trying cache_key: '{cache_key}' (in cache: {cache_key in road_cache or legacy_cache_key in road_cache})")
+            if cache_key in road_cache or legacy_cache_key in road_cache:
+                is_legacy = cache_key not in road_cache
+                cache_key = legacy_cache_key if is_legacy else cache_key
                 segment = road_cache[cache_key]
                 # Determine correct segment direction spatially
                 u_lat, u_lon = id_to_sensor[best_path[k]]["lat"], id_to_sensor[best_path[k]]["lon"]
@@ -681,7 +695,7 @@ def plan_smart_route(req: RouteRequest):
                 dist_to_end = haversine_miles(u_lat, u_lon, segment[-1][0], segment[-1][1])
                 
                 # If the end of the segment is closer to our start node, it means the segment was cached backwards
-                if dist_to_end < dist_to_start:
+                if is_legacy and dist_to_end < dist_to_start:
                     segment = list(reversed(segment))
                 # Skip first point of subsequent segments to avoid duplicates
                 if road_snapped:

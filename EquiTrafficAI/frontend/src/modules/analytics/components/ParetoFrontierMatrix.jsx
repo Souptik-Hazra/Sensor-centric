@@ -8,7 +8,8 @@ const paretoPoints = [
   { strategy: 'GWNet (Max Throughput)', mae: '2.01', rsf: '0.37', status: 'PARETO OPTIMAL', color: '#38bdf8' },
 ];
 
-const ParetoFrontierMatrix = () => {
+const ParetoFrontierMatrix = ({ points }) => {
+  const displayPoints = points?.length ? points : paretoPoints;
   return (
     <div className="ui-card-glass">
       <h2 className="ui-section-title text-purple">
@@ -19,7 +20,7 @@ const ParetoFrontierMatrix = () => {
       </p>
 
       <div className="ui-pareto-grid">
-        {paretoPoints.map((item, idx) => (
+        {displayPoints.map((item, idx) => (
           <div key={idx} className="ui-pareto-card" style={{ borderColor: item.color, borderWidth: '1px', borderStyle: 'solid' }}>
             <div className="ui-pareto-title" style={{ color: item.color }}>{item.strategy}</div>
             <div className="ui-pareto-stat">Prediction Error (MAE): <strong>{item.mae} mph</strong></div>

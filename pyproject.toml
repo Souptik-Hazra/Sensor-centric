@@ -9,6 +9,13 @@ packages = [{include = "final_package"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "^1.24.0"
+fastapi = "^0.115.0"
+uvicorn = "^0.30.0"
+python-dotenv = "^1.0.0"
+pyyaml = "^6.0.0"
+langchain-core = "^0.3.0"
+langchain-google-genai = "^2.0.0"
+langchain-groq = "^0.2.0"
 pandas = "^2.0.0"
 scipy = "^1.10.0"
 matplotlib = "^3.7.0"

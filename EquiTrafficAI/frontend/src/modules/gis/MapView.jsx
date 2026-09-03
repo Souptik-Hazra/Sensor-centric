@@ -218,22 +218,33 @@ export default function MapView() {
       const response = await fetch('/api/llm/reasoning', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+          body: JSON.stringify({
           sensor_id: targetSensor,
           prompt: promptText,
-          city: selectedCity
+          city: selectedCity,
+          step,
+          origin_id: originNodeId,
+          destination_id: destinationNodeId
         })
       });
       if (response.ok) {
         const data = await response.json();
         setLlmResponse(data.llm_response);
+        if (data.route_result || data.recommended_path_coords) {
+          window.dispatchEvent(new CustomEvent('llm-route-result', {
+            detail: data.route_result || {
+              recommended_path_coords: data.recommended_path_coords,
+              congested_avoid_coords: data.congested_avoid_coords || []
+            }
+          }));
+        }
       }
     } catch (err) {
       console.error('Failed to run LLM query:', err);
     } finally {
       setIsLlmLoading(false);
     }
-  }, [selectedNodeId, llmPrompt, selectedCity]);
+  }, [selectedNodeId, llmPrompt, selectedCity, step, originNodeId, destinationNodeId]);
 
   const mapCenter = useMemo(() => {
     switch (selectedCity) {

@@ -47,6 +47,8 @@ class UniversalPeMSAdapter:
         self._init_adapter()
 
     def _init_adapter(self):
+        self.checkpoint_loaded = False
+        self.checkpoint_error = None
         # Resolve active model version checkpoint from registry
         checkpoint = get_active_checkpoint(self.dataset_id)
 
@@ -100,10 +102,13 @@ class UniversalPeMSAdapter:
         if state_dict is not None:
             try:
                 msg = self.model.load_state_dict(state_dict, strict=False)
+                self.checkpoint_loaded = True
                 print(f"[+] MLOps Serving Adapter: Checkpoint '{os.path.basename(checkpoint)}' loaded for {self.num_nodes} nodes (missing: {len(msg.missing_keys)}, unexpected: {len(msg.unexpected_keys)}).")
             except Exception as e:
+                self.checkpoint_error = str(e)
                 print(f"[!] MLOps Serving Adapter: Loaded initialized model weights: {e}")
         else:
+            self.checkpoint_error = "No usable checkpoint found"
             print(f"[+] MLOps Serving Adapter: Initialized fresh GWNet Model ({self.num_nodes} nodes).")
             
         self.model.eval()

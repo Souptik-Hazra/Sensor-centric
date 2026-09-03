@@ -12,18 +12,16 @@ df_d = pd.read_csv(os.path.join(data_dir, 'distances.csv'))
 locs = dict(zip(df_l['sensor_id'], zip(df_l['latitude'], df_l['longitude'])))
 valid_pems = set(df_l['sensor_id'])
 
-# Match EXACT same edge selection as backend.py: top-3 nearest neighbors per sensor
+# Match the active backend: retain every valid directed road edge.
 filtered = df_d[df_d['from'].isin(valid_pems) & df_d['to'].isin(valid_pems) & (df_d['from'] != df_d['to'])].copy()
-edges_set = set()
-for sid in valid_pems:
-    sub = filtered[filtered['from'] == sid].sort_values('cost')
-    for _, r in sub.head(3).iterrows():
-        edges_set.add((int(r['from']), int(r['to'])))
+edges_set = {
+    (int(row['from']), int(row['to']))
+    for _, row in filtered.iterrows()
+    if pd.notna(row['cost']) and float(row['cost']) > 0
+}
 
-# Deduplicate into undirected pairs
-pairs = set()
-for a, b in edges_set:
-    pairs.add((min(a, b), max(a, b)))
+# Preserve direction: OSRM geometry A->B is not guaranteed to equal B->A.
+pairs = edges_set
 
 print(f"[OSRM Cache Builder] {len(pairs)} unique sensor edge pairs to cache (all map edges)...")
 

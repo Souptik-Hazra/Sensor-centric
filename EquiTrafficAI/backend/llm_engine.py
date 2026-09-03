@@ -1,22 +1,81 @@
 import os
 import json
-import requests
 import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
-class GeminiFlashLiteLLMEngine:
+class TrafficLLMEngine:
     def __init__(self):
         self.model_config = self._load_model_config()
         llm_cfg = self.model_config.get('traffic_llm_engine', {})
-        self.model_name = os.getenv("GEMINI_MODEL", llm_cfg.get('primary_model', 'gemini-2.5-flash-lite'))
+        self.provider = os.getenv("LLM_PROVIDER", "google_genai").lower()
+        configured_model = llm_cfg.get('primary_model', 'gemini-2.5-flash-lite')
+        self.model_name = os.getenv(
+            "GROQ_MODEL" if self.provider == "groq" else "GEMINI_MODEL",
+            configured_model if self.provider != "groq" else "llama-3.3-70b-versatile",
+        )
         self.temperature = llm_cfg.get('temperature', 0.2)
         self.timeout = llm_cfg.get('timeout_seconds', 8.0)
-        self.api_key = os.getenv("GEMINI_API_KEY", "")
+        self.api_key = {
+            "groq": os.getenv("GROQ_API_KEY", ""),
+            "openai": os.getenv("OPENAI_API_KEY", ""),
+            "anthropic": os.getenv("ANTHROPIC_API_KEY", ""),
+        }.get(self.provider, os.getenv("GEMINI_API_KEY", ""))
         self.la_sensor_map = {}
         self.sd_sensor_map = {}
         self._load_sensor_maps()
+        self.llm = self._build_langchain_model(llm_cfg)
+
+    def _build_langchain_model(self, llm_cfg: dict):
+        """Create the provider model through LangChain's common interface."""
+        if not self.api_key:
+            return None
+        try:
+            if self.provider in {"google", "google_genai", "gemini"}:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                return ChatGoogleGenerativeAI(
+                    model=self.model_name,
+                    google_api_key=self.api_key,
+                    temperature=self.temperature,
+                    max_output_tokens=llm_cfg.get("max_output_tokens", 512),
+                    timeout=self.timeout,
+                    max_retries=2,
+                )
+            if self.provider == "openai":
+                from langchain_openai import ChatOpenAI
+                return ChatOpenAI(
+                    model=os.getenv("OPENAI_MODEL", self.model_name),
+                    api_key=os.getenv("OPENAI_API_KEY"),
+                    temperature=self.temperature,
+                    max_tokens=llm_cfg.get("max_output_tokens", 512),
+                    timeout=self.timeout,
+                    max_retries=2,
+                )
+            if self.provider == "groq":
+                from langchain_groq import ChatGroq
+                return ChatGroq(
+                    model=self.model_name,
+                    api_key=self.api_key,
+                    temperature=self.temperature,
+                    max_tokens=llm_cfg.get("max_output_tokens", 512),
+                    timeout=self.timeout,
+                    max_retries=2,
+                )
+            if self.provider == "anthropic":
+                from langchain_anthropic import ChatAnthropic
+                return ChatAnthropic(
+                    model=os.getenv("ANTHROPIC_MODEL", self.model_name),
+                    api_key=os.getenv("ANTHROPIC_API_KEY"),
+                    temperature=self.temperature,
+                    max_tokens=llm_cfg.get("max_output_tokens", 512),
+                    timeout=self.timeout,
+                    max_retries=2,
+                )
+            print(f"[!] Unsupported LLM_PROVIDER '{self.provider}'; using offline mode.")
+        except Exception as e:
+            print(f"[!] LangChain LLM initialization failed; using offline mode: {e}")
+        return None
 
     def _load_model_config(self) -> dict:
         """Load model hyper-parameters from model_config.yaml."""
@@ -109,21 +168,20 @@ You must analyze the user's query and respond intelligently based on the telemet
 User Query: {prompt}
 """
 
-        # 1. Live Gemini Flash Lite API Call
-        if self.api_key:
+        # 1. Live provider call through LangChain's standard invoke() interface
+        if self.llm is not None:
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
-                payload = {"contents": [{"parts": [{"text": system_prompt}]}]}
-                res = requests.post(url, headers={'Content-Type': 'application/json'}, json=payload, timeout=8.0)
-                if res.status_code == 200:
-                    data = res.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        content_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                        if content_text:
-                            return content_text
+                response = self.llm.invoke(system_prompt)
+                content = response.content
+                if isinstance(content, list):
+                    content = "".join(
+                        block.get("text", "") if isinstance(block, dict) else str(block)
+                        for block in content
+                    )
+                if content:
+                    return str(content).strip()
             except Exception as e:
-                print(f"[Gemini API Exception] {e}")
+                print(f"[LangChain LLM Exception] {e}")
 
         # 2. Smart Reroute & Pattern Comparison Engine (Offline Mode)
         prompt_lower = prompt.lower()
@@ -205,4 +263,6 @@ User Query: {prompt}
                 f"• **Estimated Time Saved**: ⏱️ Up to **15 minutes** saved with proactive rerouting."
             )
 
-llm_engine = GeminiFlashLiteLLMEngine()
+# Backward-compatible name for existing integrations.
+GeminiFlashLiteLLMEngine = TrafficLLMEngine
+llm_engine = TrafficLLMEngine()
