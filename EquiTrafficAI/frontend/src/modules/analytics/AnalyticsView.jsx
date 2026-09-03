@@ -4,7 +4,7 @@ import styles from './AnalyticsView.module.css';
 import ExecutiveMetricsGrid from './components/ExecutiveMetricsGrid';
 import ParetoFrontierMatrix from './components/ParetoFrontierMatrix';
 import SpeedTrendSvgChart from './components/SpeedTrendSvgChart';
-import { fetchModelHealth, diagnoseSensor, fetchPolicy } from '../../services/apiService';
+import { fetchAnalyticsMetrics, fetchModelHealth, diagnoseSensor, fetchPolicy } from '../../services/apiService';
 
 const AnalyticsView = () => {
   const [selectedCity, setSelectedCity] = useState('la');
@@ -63,7 +63,7 @@ const AnalyticsView = () => {
     const fetchAnalyticsMetrics = async () => {
       try {
         const [metricsResult, healthResult, causalResult, policyResult] = await Promise.allSettled([
-          fetch(`/api/analytics/metrics?city=${selectedCity}`).then((r) => r.json()),
+          fetchAnalyticsMetrics(selectedCity),
           fetchModelHealth(),
           diagnoseSensor(0, selectedCity),
           fetchPolicy('equity')

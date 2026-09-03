@@ -5,6 +5,7 @@ import ChatMessageList from './components/ChatMessageList';
 import QuickPromptChips from './components/QuickPromptChips';
 import ChatHeaderBar from './components/ChatHeaderBar';
 import ChatInputFooter from './components/ChatInputFooter';
+import { requestLlmReasoning } from '../services/apiService';
 
 const INITIAL_MESSAGES = [
   {
@@ -66,7 +67,6 @@ export default function LlmChatbot() {
   const triggerProactive15MinAlert = useCallback(async (stepVal) => {
     const timeLabel = getDisplayTime(stepVal);
     try {
-      let response;
       const payload = {
         prompt: `auto_alert 15-minute alert for ${timeLabel}`,
         sensor_id: 0,
@@ -74,22 +74,8 @@ export default function LlmChatbot() {
         time_label: timeLabel,
         date_label: currentDate
       };
-      try {
-        response = await fetch('/api/llm/reasoning', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (e) {
-        response = await fetch('http://127.0.0.1:8000/api/llm/reasoning', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      }
-
-      if (response && response.ok) {
-        const data = await response.json();
+      const data = await requestLlmReasoning(payload);
+      if (data) {
         setMessages(prev => {
           if (prev.length > 0 && prev[prev.length - 1].text === data.llm_response) {
             return prev;
@@ -130,7 +116,6 @@ export default function LlmChatbot() {
     setIsLoading(true);
 
     try {
-      let response;
       const payload = {
         prompt: textToSend,
         sensor_id: originNodeId,
@@ -141,22 +126,8 @@ export default function LlmChatbot() {
         date_label: currentDate
       };
       
-      try {
-        response = await fetch('/api/llm/reasoning', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (e) {
-        response = await fetch('http://127.0.0.1:8000/api/llm/reasoning', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      }
-
-      if (response && response.ok) {
-        const data = await response.json();
+      const data = await requestLlmReasoning(payload);
+      if (data) {
         const botMsg = {
           sender: 'bot',
           text: data.llm_response,

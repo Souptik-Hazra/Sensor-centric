@@ -8,6 +8,7 @@ import MapViewHeader from './components/MapViewHeader';
 import CongestionWarningsCard from './components/CongestionWarningsCard';
 import MapPlaybackCard from './components/MapPlaybackCard';
 import MapMarkerLayer from './components/MapMarkerLayer';
+import { fetchCityState, fetchTrafficState, planSmartRoute, requestLlmReasoning } from '../../services/apiService';
 
 import simulationData from '../../core/simulationData.json';
 const { empiricalProfiles } = simulationData;
@@ -90,9 +91,8 @@ export default function MapView() {
   useEffect(() => {
     const fetchCityState = async () => {
       try {
-        const response = await fetch(`/api/state?city=${selectedCity}`);
-        if (response.ok) {
-          const data = await response.json();
+        const data = await fetchCityState(selectedCity);
+        if (data) {
           setBaseNodes(data.sensors || []);
           setNodes(data.sensors || []);
           setEdges(data.edges || []);
@@ -116,9 +116,8 @@ export default function MapView() {
   useEffect(() => {
     const fetch15MinWarnings = async () => {
       try {
-        const response = await fetch(`/api/predict/congestion_15min?city=${selectedCity}&timestamp_index=${step}`);
-        if (response.ok) {
-          const data = await response.json();
+        const data = await fetchTrafficState(step, selectedCity);
+        if (data) {
           setUpcoming15MinWarnings(data.congested_nodes || []);
         }
       } catch (err) {
@@ -188,20 +187,8 @@ export default function MapView() {
     const actualOrigin = oId !== undefined ? oId : originNodeId;
     const actualDest = dId !== undefined ? dId : destinationNodeId;
     try {
-      const response = await fetch('/api/route/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          origin_id: actualOrigin,
-          destination_id: actualDest,
-          target_time: targetArrivalTime,
-          city: selectedCity
-        })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setRouteResult(data);
-      }
+      const data = await planSmartRoute(actualOrigin, actualDest, selectedCity, targetArrivalTime);
+      if (data) setRouteResult(data);
     } catch (err) {
       console.error('Failed to calculate route:', err);
     } finally {
@@ -215,20 +202,15 @@ export default function MapView() {
     const promptText = customPrompt || llmPrompt || `Which way to avoid and use if starting now for Sensor #${targetSensor}?`;
     
     try {
-      const response = await fetch('/api/llm/reasoning', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      const data = await requestLlmReasoning({
           sensor_id: targetSensor,
           prompt: promptText,
           city: selectedCity,
           step,
           origin_id: originNodeId,
           destination_id: destinationNodeId
-        })
       });
-      if (response.ok) {
-        const data = await response.json();
+      if (data) {
         setLlmResponse(data.llm_response);
         if (data.route_result || data.recommended_path_coords) {
           window.dispatchEvent(new CustomEvent('llm-route-result', {

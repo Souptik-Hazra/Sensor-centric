@@ -34,6 +34,12 @@ export const fetchSensors = async (city = "la") => {
   };
 };
 
+export const fetchCityState = async (city = "la") => {
+  const res = await fetch(`${BACKEND_URL}/api/state?city=${encodeURIComponent(city)}`);
+  if (!res.ok) throw new Error(`State request failed: ${res.status}`);
+  return res.json();
+};
+
 export const fetchTrafficState = async (timestampIndex = 0, city = "la") => {
   try {
     const res = await fetch(`${BACKEND_URL}/api/predict/congestion_15min?city=${encodeURIComponent(city)}&timestamp_index=${timestampIndex}`);
@@ -50,12 +56,12 @@ export const fetchTrafficState = async (timestampIndex = 0, city = "la") => {
   return { timestampIndex, readings: [] };
 };
 
-export const planSmartRoute = async (originId, destId, city = "la") => {
+export const planSmartRoute = async (originId, destId, city = "la", targetTime = "08:30 AM") => {
   try {
     const res = await fetch(`${BACKEND_URL}/api/route/plan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin_id: originId, destination_id: destId, target_time: "08:30 AM", city })
+      body: JSON.stringify({ origin_id: originId, destination_id: destId, target_time: targetTime, city })
     });
     if (res.ok) {
       return await res.json();
@@ -66,9 +72,25 @@ export const planSmartRoute = async (originId, destId, city = "la") => {
   return null;
 };
 
+export const requestLlmReasoning = async (payload) => {
+  const res = await fetch(`${BACKEND_URL}/api/llm/reasoning`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`LLM request failed: ${res.status}`);
+  return res.json();
+};
+
 export const fetchModelHealth = async () => {
   const res = await fetch(`${BACKEND_URL}/api/health/models`);
   if (!res.ok) throw new Error(`Model health request failed: ${res.status}`);
+  return res.json();
+};
+
+export const fetchAnalyticsMetrics = async (city = "la") => {
+  const res = await fetch(`${BACKEND_URL}/api/analytics/metrics?city=${encodeURIComponent(city)}`);
+  if (!res.ok) throw new Error(`Analytics request failed: ${res.status}`);
   return res.json();
 };
 
