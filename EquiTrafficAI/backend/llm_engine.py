@@ -16,7 +16,7 @@ class TrafficLLMEngine:
             configured_model if self.provider != "groq" else "llama-3.3-70b-versatile",
         )
         self.temperature = llm_cfg.get('temperature', 0.2)
-        self.timeout = llm_cfg.get('timeout_seconds', 8.0)
+        self.timeout = max(10.0, float(llm_cfg.get('timeout_seconds', 12.0)))
         self.api_key = {
             "groq": os.getenv("GROQ_API_KEY", ""),
             "openai": os.getenv("OPENAI_API_KEY", ""),

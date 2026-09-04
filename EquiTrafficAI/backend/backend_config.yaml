@@ -31,8 +31,6 @@ openapi_tags:
     description: "Level-3 Structural Causal Model (SCM) Direct & Indirect Effect Mediation"
   - name: "Policy Advisor"
     description: "Pareto Optimal Reliability Policy Advisory"
-  - name: "MLOps Training"
-    description: "Non-Blocking Asynchronous Background PyTorch Model Training Worker"
   - name: "AI Copilot"
     description: "Google Gemini Flash 2.5 Lite Natural Language Traffic Advisory"
 

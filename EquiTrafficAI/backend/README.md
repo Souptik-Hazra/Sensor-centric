@@ -1,17 +1,17 @@
-# ⚙️ EquiTraffic-GPT Backend MLOps Engine
+# ⚙️ EquiTraffic-GPT Backend Serving Engine
 
-FastAPI MLOps serving engine connecting PyTorch spatiotemporal GraphWaveNet predictions, Judea Pearl's Level-3 Causal Mediation Analysis, OpenStreetMap OSRM highway route planning, YAML-driven configurations, and Google Gemini 2.5 Flash Lite LLM Copilot advisories.
+FastAPI serving engine connecting one-time Colab-trained PyTorch spatiotemporal GraphWaveNet checkpoints, OpenStreetMap OSRM highway route planning, YAML-driven configurations, and Google Gemini 2.5 Flash Lite LLM Copilot advisories.
 
 ---
 
 ## ⚙️ Core API Endpoints
 
-1. **`GET /api/state?city=la`**: Returns 923 geocoded loop detector locations and spatial adjacency graph edges for METR-LA, SD400, and PeMS corridors.
-2. **`GET /api/predict/congestion_15min`**: Evaluates 15-minute proactive speed drops (< 25 mph) across all nodes.
-3. **`POST /api/route/plan`**: Computes A* shortest path with OSRM highway curve polylines and recommended departure times.
-4. **`POST /api/llm/reasoning`**: Asynchronously calls Gemini 2.5 LLM to generate plain-English bottleneck advisories.
-5. **`POST /api/policy/pareto`**: Evaluates suburban equity vs maximum throughput Pareto trade-off policies.
-6. **`POST /predict` & `POST /reroute`**: Batch tensor GNN forecasting and Caltrans real-ID index resolution endpoints.
+1. **`GET /api/state?city=la`**: Returns loaded sensor metadata and topology edges.
+2. **`GET /api/health/models`**: Reports checkpoint readiness for each loaded model.
+3. **`GET /api/predict/congestion_15min`**: Evaluates 15-minute proactive speed drops (< 25 mph) across all nodes.
+4. **`POST /api/route/plan`**: Computes the LA A* shortest path with OSRM highway curve polylines.
+5. **`POST /api/llm/reasoning`**: Calls the configured LLM provider or offline advisory engine.
+6. **`POST /predict` & `POST /reroute`**: Direct tensor forecasting and corridor rerouting advisory endpoints.
 
 ---
 
@@ -24,7 +24,11 @@ FastAPI MLOps serving engine connecting PyTorch spatiotemporal GraphWaveNet pred
 
 ## 📁 Module Overview
 
-* **`backend.py`**: Master FastAPI application router, OSRM highway path router, CUSUM anomaly detector, and static frontend dist file server.
+* **`backend.py`**: FastAPI application composition, middleware, router registration, and static frontend dist file server.
+* **`app_state.py`**: Shared model, location, and mutable runtime state initialization.
+* **`lifecycle.py`**: Startup configuration, tensor, topology, and route-graph loading.
+* **`routers/`**: FastAPI endpoint modules for state, health, forecast, routing, and LLM operations.
+* **`services/`**: Forecast, routing, chatbot, speed conversion, and synthetic topology logic.
 * **`llm_engine.py`**: Google Gemini 2.5 Flash Lite Generative AI Copilot integration.
 * **`sensor_location_mapper.py`**: Geographic coordinate mapper & California freeway corridor registry.
 * **`backend_config.yaml`**: Server & dataset configuration schema.

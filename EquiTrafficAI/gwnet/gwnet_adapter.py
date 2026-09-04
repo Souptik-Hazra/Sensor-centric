@@ -77,7 +77,8 @@ class UniversalPeMSAdapter:
 
         # Dynamic spatial adjacency tensor setup
         adj_tensor = torch.FloatTensor(adj_matrix).to(self.device)
-        supports = [adj_tensor]
+        # The SD400 checkpoint was trained with adaptive adjacency only.
+        supports = [] if "sd" in self.dataset_id else [adj_tensor]
 
         # Dynamic Channel & Horizon Configuration from model_config.yaml
         gnn_cfg = self.config.get('graph_wavenet_gnn', {}).get('architecture', {})
@@ -102,11 +103,17 @@ class UniversalPeMSAdapter:
         if state_dict is not None:
             try:
                 msg = self.model.load_state_dict(state_dict, strict=False)
+                if msg.missing_keys or msg.unexpected_keys:
+                    raise RuntimeError(
+                        "Checkpoint architecture is incomplete: "
+                        f"missing={len(msg.missing_keys)}, "
+                        f"unexpected={len(msg.unexpected_keys)}"
+                    )
                 self.checkpoint_loaded = True
                 print(f"[+] MLOps Serving Adapter: Checkpoint '{os.path.basename(checkpoint)}' loaded for {self.num_nodes} nodes (missing: {len(msg.missing_keys)}, unexpected: {len(msg.unexpected_keys)}).")
             except Exception as e:
                 self.checkpoint_error = str(e)
-                print(f"[!] MLOps Serving Adapter: Loaded initialized model weights: {e}")
+                print(f"[!] MLOps Serving Adapter: Checkpoint rejected; serving fallback: {e}")
         else:
             self.checkpoint_error = "No usable checkpoint found"
             print(f"[+] MLOps Serving Adapter: Initialized fresh GWNet Model ({self.num_nodes} nodes).")

@@ -7,6 +7,7 @@ provider-specific model remains behind ``TrafficLLMEngine``.
 
 import re
 from typing import Any, Callable
+from .speed_utils import standardized_speed_to_mph
 
 
 class TrafficChatbotService:
@@ -36,16 +37,6 @@ class TrafficChatbotService:
              or str(sensor.get("sensor_id")) == str(reference)),
             None,
         )
-
-    @staticmethod
-    def _to_mph(value: float, fallback: float) -> float:
-        try:
-            value = float(value)
-        except (TypeError, ValueError):
-            return max(10.0, float(fallback))
-        if -5.0 < value < 5.0:
-            value = 54.40 + value * 19.40
-        return max(10.0, min(75.0, value))
 
     def _route_request(self, prompt: str, city: str, sensors: list[dict[str, Any]],
                        route_planner: Callable):
@@ -118,8 +109,8 @@ class TrafficChatbotService:
         if history is not None and len(history) and 0 <= node_id < history.shape[1]:
             current_index = max(0, min(history.shape[0] - 1, int(req.step)))
             future_index = min(history.shape[0] - 1, current_index + 3)
-            speed = self._to_mph(history[current_index, node_id, 0], speed)
-            predicted_speed = self._to_mph(history[future_index, node_id, 0], speed)
+            speed = standardized_speed_to_mph(history[current_index, node_id, 0], speed)
+            predicted_speed = standardized_speed_to_mph(history[future_index, node_id, 0], speed)
             if speed < 30.0 or predicted_speed < 30.0:
                 status = "CONGESTED"
 
