@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, status
+from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -153,7 +153,6 @@ def load_all_data():
         df_l = pd.read_csv(la_locs)
 
         nodes = []
-        sensor_map = {}
         for idx, row in df_m.iterrows():
             sid = int(row['node_id'])
             if idx < len(df_l):
@@ -187,7 +186,6 @@ def load_all_data():
                 "location_label": loc_info.get("location_label", f"Sensor #{sid}")
             }
             nodes.append(sensor_data)
-            sensor_map[sid] = sensor_data
 
         edges = []
         neighbors = {i: [] for i in range(len(nodes))}
@@ -219,6 +217,7 @@ def load_all_data():
                     legacy_cache_key = f"{min(u_pems, v_pems)}-{max(u_pems, v_pems)}"
                     if cache_key in road_cache:
                         road_coords = road_cache[cache_key]
+                        edges.append(road_coords)
                     elif legacy_cache_key in road_cache:
                         road_coords = road_cache[legacy_cache_key]
                         if u_pems > v_pems:
@@ -337,11 +336,6 @@ class RouteRequest(BaseModel):
     destination_id: int = Field(..., description="Destination sensor node ID", json_schema_extra={"example": 10})
     target_time: str = Field(default="08:45 AM", description="Target departure time string")
     city: str = Field(default="la", description="Target city/corridor identifier (la, sd, pems04...)")
-
-class TrainRequest(BaseModel):
-    dataset: str = Field(default="metr_la", description="Target dataset name")
-    epochs: int = Field(default=10, ge=1, le=200, description="Number of training epochs")
-    stride: int = Field(default=3, ge=1, le=12, description="Sequence windowing stride")
 
 class LLMQueryRequest(BaseModel):
     prompt: str = Field(..., description="User prompt or highway query", json_schema_extra={"example": "Why is I-5 South congested?"})
@@ -792,40 +786,6 @@ def plan_smart_route(req: RouteRequest):
             "reason": "Avoids 15-minute predicted neural bottleneck cluster." if has_bottleneck else "Standard optimal flow corridor."
         }
     }
-
-
-# Non-Blocking Asynchronous Background Training Worker (MLOps Best Practice)
-training_status_db = {"status": "idle", "dataset": None, "current_epoch": 0, "total_epochs": 0, "message": "No training in progress"}
-
-def bg_training_worker(dataset: str, epochs: int, stride: int):
-    global training_status_db
-    try:
-        training_status_db = {"status": "running", "dataset": dataset, "current_epoch": 0, "total_epochs": epochs, "message": f"Training GWNet on {dataset.upper()} ({epochs} epochs)..."}
-        import sys
-        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'gwnet'))
-        from gwnet_trainer import train_full_gwnet
-        train_full_gwnet(dataset_name=dataset, num_epochs=epochs, stride=stride)
-        training_status_db = {"status": "completed", "dataset": dataset, "current_epoch": epochs, "total_epochs": epochs, "message": f"GWNet Model Training for {dataset.upper()} completed successfully!"}
-    except Exception as e:
-        training_status_db = {"status": "error", "dataset": dataset, "current_epoch": 0, "total_epochs": epochs, "message": f"Training failed: {e}"}
-
-
-@app.post("/api/train/start", tags=["MLOps Training"], response_description="Background Model Training Dispatcher")
-def start_model_training(req: TrainRequest, bg_tasks: BackgroundTasks):
-    """Enqueues non-blocking background PyTorch Graph WaveNet GNN training job."""
-    global training_status_db
-    if training_status_db["status"] == "running":
-        return {"error": "Training already in progress", "status": training_status_db}
-    
-    bg_tasks.add_task(bg_training_worker, req.dataset, req.epochs, req.stride)
-    training_status_db = {"status": "starting", "dataset": req.dataset, "current_epoch": 0, "total_epochs": req.epochs, "message": f"Enqueued non-blocking training task for {req.dataset.upper()} ({req.epochs} epochs)."}
-    return training_status_db
-
-
-@app.get("/api/train/status", tags=["MLOps Training"], response_description="Model Training Status")
-def get_training_status():
-    """Polls real-time training progress status of background PyTorch worker."""
-    return training_status_db
 
 
 @app.post("/api/llm/reasoning", tags=["AI Copilot"], response_description="Gemini LLM Causal Reroute Copilot Analysis")
