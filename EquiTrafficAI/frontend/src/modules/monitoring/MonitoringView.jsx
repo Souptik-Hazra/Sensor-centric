@@ -54,8 +54,15 @@ const MonitoringView = () => {
           <tbody>
             {sensors.map(sensor => {
               const data = speedMap.get(String(sensor.sensor_id));
-              const currentSpeed = data?.speed || sensor.speed || 58.5;
-              const statusType = data?.status || (currentSpeed >= 50 ? 'fast' : currentSpeed >= 25 ? 'medium' : 'slow');
+              const currentSpeed = data?.speed ?? sensor.speed ?? 58.5;
+              const backendStatus = String(data?.status || sensor.status || '').toLowerCase();
+              const statusType = backendStatus.includes('congest') || backendStatus === 'slow'
+                ? 'slow'
+                : backendStatus.includes('moderate') || backendStatus === 'medium'
+                  ? 'medium'
+                  : backendStatus === 'fast' || backendStatus === 'free_flow' || currentSpeed >= 50
+                    ? 'fast'
+                    : currentSpeed >= 25 ? 'medium' : 'slow';
               const locationName = sensor.location_label || sensor.name || `Corridor Sensor #${sensor.sensor_id}`;
 
               return (

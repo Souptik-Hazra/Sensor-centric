@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, status
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -69,8 +70,6 @@ state_data: Dict[str, Any] = {
     "pems_bay": {},
     "pems03": {},
     "pems07": {},
-    "pareto": [],
-    "causal": {},
     "graph_neighbors": {}
 }
 
@@ -146,17 +145,6 @@ def load_all_data():
     la_metrics = os.path.join(data_dir, 'metr_la_metrics.csv')
     la_locs = os.path.join(data_dir, 'sensor_locations.csv')
     la_dists = os.path.join(data_dir, 'distances.csv')
-    pareto_csv = os.path.join(data_dir, 'pareto_frontier_results.csv')
-    ctf_csv = os.path.join(data_dir, 'ctf_decomposition_results.csv')
-
-    if os.path.exists(pareto_csv):
-        df_p = pd.read_csv(pareto_csv)
-        state_data["pareto"] = df_p.to_dict(orient='records')
-
-    if os.path.exists(ctf_csv):
-        df_c = pd.read_csv(ctf_csv)
-        state_data["causal"] = dict(zip(df_c['pathway'], df_c['estimate']))
-
     if os.path.exists(la_metrics) and os.path.exists(la_locs):
         df_m = pd.read_csv(la_metrics)
         df_l = pd.read_csv(la_locs)
@@ -347,13 +335,6 @@ class RouteRequest(BaseModel):
     target_time: str = Field(default="08:45 AM", description="Target departure time string")
     city: str = Field(default="la", description="Target city/corridor identifier (la, sd, pems04...)")
 
-class CausalDiagnoseRequest(BaseModel):
-    sensor_id: int = Field(..., description="Sensor node ID to diagnose", json_schema_extra={"example": 10})
-    city: str = Field(default="la", description="Target city identifier")
-
-class PolicyRequest(BaseModel):
-    goal: str = Field(..., description="Optimization goal (e.g. 'equity', 'throughput')", json_schema_extra={"example": "equity"})
-
 class TrainRequest(BaseModel):
     dataset: str = Field(default="metr_la", description="Target dataset name")
     epochs: int = Field(default=10, ge=1, le=200, description="Number of training epochs")
@@ -395,39 +376,6 @@ def get_model_health():
     }
 
 
-@app.get("/api/analytics/metrics", tags=["Analytics"], response_description="Dynamic Pareto Equity & Anomaly Metrics")
-def get_analytics_metrics(city: str = Query("la")):
-    """Calculates real-time MAE, RSF disparity, zero-dropout rates, and Pareto frontier points."""
-    city_key = city.lower()
-    city_data = state_data.get(city_key, state_data["la"])
-    sensors = city_data.get("sensors", [])
-    speeds = [s.get("speed", 55.0) for s in sensors]
-    
-    speed_std = float(np.std(speeds)) if speeds else 5.0
-    dynamic_mae = round(float(1.82 + (speed_std / 30.0)), 2)
-    dynamic_rsf = round(float(0.0705 + (speed_std / 120.0)), 4)
-    dynamic_zero_rate = round(float(np.mean([1 if sp < 1.0 else 0 for sp in speeds]) * 100.0), 2)
-    if dynamic_zero_rate == 0:
-        dynamic_zero_rate = 8.45 if city_key == "la" else 2.75
-
-    pareto_points = [
-        {"strategy": "DCRNN Baseline", "mae": round(dynamic_mae * 1.52, 2), "rsf": round(dynamic_rsf * 5.4, 3), "color": "#ef4444", "status": "DOMINATED"},
-        {"strategy": "FairSTG Baseline", "mae": round(dynamic_mae * 1.34, 2), "rsf": round(dynamic_rsf * 4.0, 3), "color": "#f59e0b", "status": "SUB-OPTIMAL"},
-        {"strategy": "GWNet (Suburban Equity)", "mae": round(dynamic_mae * 1.18, 2), "rsf": round(dynamic_rsf * 2.0, 3), "color": "#a855f7", "status": "PARETO OPTIMAL"},
-        {"strategy": "GWNet (Max Throughput)", "mae": dynamic_mae, "rsf": round(dynamic_rsf * 3.1, 3), "color": "#38bdf8", "status": "PARETO OPTIMAL"}
-    ]
-
-    return {
-        "city": city_key,
-        "mae": dynamic_mae,
-        "rsf": dynamic_rsf,
-        "causal_indirect_pct": 61.3,
-        "causal_direct_pct": 21.4,
-        "zero_dropout_rate": dynamic_zero_rate,
-        "pareto_matrix": pareto_points
-    }
-
-
 @app.get("/api/predict/congestion_15min", tags=["Neural Forecasting & GWNet"], response_description="15-Minute Neural Forecast Congestion Bottlenecks")
 def predict_congestion_15min(city: str = Query("la"), timestamp_index: int = Query(96)):
     """In-memory sequence slice neural congestion detector for 15-minute future horizon."""
@@ -437,20 +385,45 @@ def predict_congestion_15min(city: str = Query("la"), timestamp_index: int = Que
     
     his_data = state_data.get("his_npz_sd") if city_key == "sd" else state_data.get("his_npz_la")
     predicted_15min_speeds = {}
+    forecast_source = "historical_fallback"
 
-    if his_data is not None:
+    adapter = gwnet_adapters.get(city_key)
+    if his_data is not None and adapter is not None and adapter.checkpoint_loaded and his_data.shape[0] > 0:
         try:
             T_max = his_data.shape[0]
-            start_idx = max(0, min(T_max - 24, timestamp_index))
+            current_idx = max(0, min(T_max - 1, timestamp_index))
+            window = his_data[max(0, current_idx - 11):current_idx + 1]
+            if len(window) < 12:
+                window = np.concatenate([np.repeat(window[:1], 12 - len(window), axis=0), window], axis=0)
+            model_output = adapter.predict_next_15min(window)
+            # The model emits 12 five-minute horizons; index 2 is +15 min.
+            future_15min_slice = model_output[2]
+            forecast_source = "gwnet"
+            for idx, s in enumerate(sensors):
+                if idx < len(future_15min_slice):
+                    val = float(future_15min_slice[idx])
+                    if -5.0 < val < 5.0:
+                        # Match the denormalization used by gwnet_trainer.py
+                        # for this standardized METR-LA training tensor.
+                        val = 54.40 + (val * 19.40)
+                    val = max(10.0, min(75.0, val))
+                    predicted_15min_speeds[s.get("id")] = round(val, 1)
+        except Exception as e:
+            print(f"[!] GWNet 15-min inference error; using historical fallback: {e}")
+
+    if not predicted_15min_speeds and his_data is not None:
+        try:
+            T_max = his_data.shape[0]
+            start_idx = max(0, min(T_max - 4, timestamp_index))
             future_15min_slice = his_data[start_idx + 3, :, 0]
             for idx, s in enumerate(sensors):
                 if idx < len(future_15min_slice):
                     val = float(future_15min_slice[idx])
-                    if val < 5.0 and val > -5.0:
-                        val = max(10.0, min(75.0, 58.0 + (val * 12.5)))
-                    predicted_15min_speeds[s.get("id")] = round(val, 1)
+                    if -5.0 < val < 5.0:
+                        val = 54.40 + (val * 19.40)
+                    predicted_15min_speeds[s.get("id")] = round(max(10.0, min(75.0, val)), 1)
         except Exception as e:
-            print(f"[!] Real 15-min neural forecast sample error: {e}")
+            print(f"[!] Historical 15-min fallback error: {e}")
 
     congested_nodes = []
     for s in sensors:
@@ -475,8 +448,12 @@ def predict_congestion_15min(city: str = Query("la"), timestamp_index: int = Que
         "city": city_key,
         "horizon": "15-min",
         "timestamp_index": timestamp_index,
+        "source": forecast_source,
         "congested_sensors_count": len(congested_nodes),
-        "congested_nodes": congested_nodes[:10]
+        "congested_nodes": congested_nodes[:10],
+        # Send the complete horizon so the map can recolor every sensor,
+        # not only sensors below the warning threshold.
+        "predicted_speeds": {str(sensor_id): speed for sensor_id, speed in predicted_15min_speeds.items()}
     }
 
 
@@ -578,6 +555,20 @@ def plan_smart_route(req: RouteRequest):
     else:
         live_speeds = None
 
+    def tensor_speed_to_mph(value, fallback):
+        """Convert the standardized speed channel used by the GWNet tensors."""
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return max(10.0, float(fallback))
+        if not math.isfinite(value) or value <= 0:
+            return max(10.0, float(fallback))
+        # METR-LA/SD400 tensors are standardized around zero. Keep the same
+        # inverse transform used by the 15-minute forecast endpoint.
+        if -5.0 < value < 5.0:
+            value = 58.0 + (value * 12.5)
+        return max(10.0, min(75.0, value))
+
     # A* Search over spatial graph
     graph = nx.DiGraph()
     graph.add_nodes_from(s["id"] for s in sensors)
@@ -627,10 +618,9 @@ def plan_smart_route(req: RouteRequest):
 
                 speed_v_static = max(10.0, sensors[v].get("speed", 55.0))
                 
-                speed_v = float(live_speeds[v]) if live_speeds is not None and v < len(live_speeds) else speed_v_static
-                if math.isnan(speed_v) or speed_v <= 0: speed_v = speed_v_static
-                
-                speed_v = max(10.0, speed_v)
+                speed_v = (tensor_speed_to_mph(live_speeds[v], speed_v_static)
+                           if live_speeds is not None and v < len(live_speeds)
+                           else speed_v_static)
                 
                 travel_time_v = (dist_miles / speed_v) * 60.0
                 
@@ -703,12 +693,31 @@ def plan_smart_route(req: RouteRequest):
                 else:
                     road_snapped.extend(segment)
             else:
-                # Fallback: straight line for uncached segment
+                # A cache can be partial. Resolve only the missing segment
+                # from OSRM, then fall back to a straight segment if routing
+                # is unavailable.
+                segment = None
+                try:
+                    u_sensor = id_to_sensor[best_path[k]]
+                    v_sensor = id_to_sensor[best_path[k + 1]]
+                    osrm_url = (
+                        "http://router.project-osrm.org/route/v1/driving/"
+                        f"{u_sensor['lon']:.6f},{u_sensor['lat']:.6f};"
+                        f"{v_sensor['lon']:.6f},{v_sensor['lat']:.6f}"
+                        "?overview=full&geometries=geojson"
+                    )
+                    response = requests.get(osrm_url, timeout=5.0)
+                    routes = response.json().get("routes", []) if response.status_code == 200 else []
+                    if routes:
+                        segment = [[lat, lon] for lon, lat in routes[0]["geometry"]["coordinates"]]
+                except Exception:
+                    segment = None
+                if not segment:
+                    segment = [primary_path_coords[k], primary_path_coords[k + 1]]
                 if road_snapped:
-                    road_snapped.append(primary_path_coords[k+1])
+                    road_snapped.extend(segment[1:])
                 else:
-                    road_snapped.append(primary_path_coords[k])
-                    road_snapped.append(primary_path_coords[k+1])
+                    road_snapped.extend(segment)
         if road_snapped:
             primary_path_coords = road_snapped
             print(f"[DEBUG] road_snapped length: {len(road_snapped)}")
@@ -731,7 +740,11 @@ def plan_smart_route(req: RouteRequest):
             pass
 
     if live_speeds is not None:
-        primary_speeds = [max(10.0, float(live_speeds[nid])) if nid < len(live_speeds) else id_to_sensor[nid].get("speed", 55.0) for nid in best_path]
+        primary_speeds = [
+            tensor_speed_to_mph(live_speeds[nid], id_to_sensor[nid].get("speed", 55.0))
+            if nid < len(live_speeds) else id_to_sensor[nid].get("speed", 55.0)
+            for nid in best_path
+        ]
     else:
         primary_speeds = [id_to_sensor[nid].get("speed", 55.0) for nid in best_path]
 
@@ -775,71 +788,6 @@ def plan_smart_route(req: RouteRequest):
             "estimated_time_saved_minutes": time_saved_min,
             "reason": "Avoids 15-minute predicted neural bottleneck cluster." if has_bottleneck else "Standard optimal flow corridor."
         }
-    }
-
-
-@app.post("/api/diagnose/causal", tags=["Causal Diagnostics"], response_description="Causal SCM Direct & Indirect Effect Breakdown")
-def diagnose_causal(req: CausalDiagnoseRequest):
-    """Computes Level-3 Structural Causal Model (SCM) direct vs indirect mediation effects."""
-    city_key = req.city.lower()
-    city_data = state_data.get(city_key, state_data["la"])
-    sensors = city_data.get("sensors", [])
-    
-    sensor_id = req.sensor_id
-    selected = next((s for s in sensors if s.get("id") == sensor_id or s.get("sensor_id") == sensor_id), None)
-    if not selected:
-        safe_sid = max(0, sensor_id)
-        selected = sensors[safe_sid % len(sensors)] if sensors else {
-            "sensor_id": sensor_id, "speed": 45.0, "zero_dropout_rate": 5.2, "reliability": 0.91,
-            "cusum_flag": True, "ewma_flag": False, "traffic_regime": "DEGRADED", "status": "DEGRADED"
-        }
-
-    speed = float(selected.get("speed", 55.0))
-    dropout = float(selected.get("zero_dropout_rate", 3.5))
-    is_anomaly = bool(selected.get("cusum_flag") or selected.get("ewma_flag") or speed < 35.0)
-
-    total_effect = round(float(max(0.1, (65.0 - speed) / 65.0)), 3)
-    direct_effect = round(float(total_effect * 0.214), 3)
-    indirect_effect_reliability = round(float(total_effect * 0.613), 3)
-    residual_effect = round(float(total_effect - (direct_effect + indirect_effect_reliability)), 3)
-
-    return {
-        "city": city_key,
-        "sensor_id": selected.get("sensor_id", sensor_id),
-        "location": selected.get("location_label", f"Sensor #{sensor_id}"),
-        "current_speed_mph": speed,
-        "dropout_rate_pct": dropout,
-        "anomaly_flagged": is_anomaly,
-        "causal_scm_breakdown": {
-            "total_treatment_effect": total_effect,
-            "ctf_direct_effect_ctf_de": direct_effect,
-            "ctf_indirect_effect_reliability_ctf_ie_r": indirect_effect_reliability,
-            "residual_unobserved_confounding": residual_effect,
-            "direct_effect_contribution_pct": 21.4,
-            "indirect_reliability_contribution_pct": 61.3
-        },
-        "policy_recommendation": "Recalibrate sensor reliability weights to `reliability_equal` variant to eliminate 61.3% indirect regional disparity."
-    }
-
-
-@app.post("/api/policy/pareto", tags=["Policy Advisor"], response_description="Pareto Optimal Reliability Policy Advisory")
-def pareto_policy(req: PolicyRequest):
-    """Recommends Pareto optimal reliability weighting policies based on user objective."""
-    pareto_list = state_data.get("pareto", [])
-    if "equity" in req.goal.lower():
-        selected = next((item for item in pareto_list if "DOMINATED" not in item.get("Strategy", "")), pareto_list[0] if pareto_list else {})
-        paradigm = "reliability_equal"
-        explanation = "Configured system to `reliability_equal` variant to ensure outer-district commuters receive equitable travel times."
-    else:
-        selected = pareto_list[0] if pareto_list else {}
-        paradigm = "reliability_pca"
-        explanation = "Configured system to `reliability_pca` variant to maximize overall network throughput."
-
-    return {
-        "user_goal": req.goal,
-        "selected_policy": selected,
-        "reliability_paradigm": paradigm,
-        "policy_explanation": explanation
     }
 
 
@@ -900,7 +848,16 @@ def llm_causal_reasoning(req: LLMQueryRequest):
     
     # Extract sensor/node IDs from the prompt
     route_result_data = None
+    context_origin_id = req.origin_id
+    context_destination_id = req.destination_id
     if is_route_query:
+        def resolve_sensor_reference(reference):
+            """Accept either a graph node index or a real PeMS sensor ID."""
+            numeric = int(reference)
+            match = next((s for s in sensors if s.get("id") == numeric
+                          or str(s.get("sensor_id")) == str(reference)), None)
+            return match.get("id") if match else None
+
         node_matches = []
         if direct_match:
             node_matches = [direct_match.group(1), direct_match.group(2)]
@@ -914,9 +871,9 @@ def llm_causal_reasoning(req: LLMQueryRequest):
                     node_matches = num_matches[:2]
         
         if len(node_matches) >= 2:
-            o_id = int(node_matches[0])
-            d_id = int(node_matches[1])
-            if o_id < len(sensors) and d_id < len(sensors):
+            o_id = resolve_sensor_reference(node_matches[0])
+            d_id = resolve_sensor_reference(node_matches[1])
+            if o_id is not None and d_id is not None:
                 # Build a fake RouteRequest and call plan_smart_route internally
                 class FakeRouteReq:
                     origin_id = o_id
@@ -925,10 +882,13 @@ def llm_causal_reasoning(req: LLMQueryRequest):
                     city = city_key
                 try:
                     route_result_data = plan_smart_route(FakeRouteReq())
+                    context_origin_id = o_id
+                    context_destination_id = d_id
+                    input_id = o_id
                 except Exception as e:
                     print(f"[LLM Route] Failed to compute route: {e}")
 
-    selected_sensor = next((s for s in sensors if s.get("sensor_id") == input_id), None)
+    selected_sensor = next((s for s in sensors if str(s.get("sensor_id")) == str(input_id)), None)
     if not selected_sensor:
         selected_sensor = next((s for s in sensors if s.get("id") == input_id), sensors[0] if sensors else {})
     
@@ -955,17 +915,18 @@ def llm_causal_reasoning(req: LLMQueryRequest):
     if his_data is not None:
         try:
             T_max = his_data.shape[0]
-            current_idx = max(0, min(T_max - 24, req.step))
+            current_idx = max(0, min(T_max - 1, req.step))
             speed_val = float(his_data[current_idx, node_idx, 0])
             if -5.0 < speed_val < 5.0:
-                speed = max(10.0, min(75.0, 58.0 + (speed_val * 12.5)))
+                speed = max(10.0, min(75.0, 54.40 + (speed_val * 19.40)))
             else:
                 speed = speed_val
 
             future_idx = current_idx + 3  # 15 minutes ahead
+            future_idx = min(T_max - 1, future_idx)
             pred_val = float(his_data[future_idx, node_idx, 0])
             if -5.0 < pred_val < 5.0:
-                predicted_speed = max(10.0, min(75.0, 58.0 + (pred_val * 12.5)))
+                predicted_speed = max(10.0, min(75.0, 54.40 + (pred_val * 19.40)))
             else:
                 predicted_speed = pred_val
                 
@@ -1003,12 +964,12 @@ def llm_causal_reasoning(req: LLMQueryRequest):
         )
         
         return {
-            "sensor_id": real_sensor_id,
+            "sensor_id": selected_sensor.get("sensor_id", real_sensor_id),
             "user_prompt": req.prompt,
             "llm_response": llm_text,
             "downstream_neighbors": downstream_sensor_ids,
             "gwnet_forecast_horizon": "15-min",
-            "location": selected_sensor.get("location_label", ""),
+            "location": origin_info.get("label", selected_sensor.get("location_label", "")),
             "recommended_path_coords": path_coords,
             "route_result": route_result_data
         }
@@ -1024,8 +985,8 @@ def llm_causal_reasoning(req: LLMQueryRequest):
         city=city_key,
         time_label=req.time_label,
         date_label=req.date_label,
-        origin_id=req.origin_id,
-        destination_id=req.destination_id
+        origin_id=context_origin_id,
+        destination_id=context_destination_id
     )
 
     return {
@@ -1046,6 +1007,10 @@ dist_candidates = [
 ]
 for candidate in dist_candidates:
     if os.path.exists(candidate):
+        @app.get("/map", include_in_schema=False)
+        def serve_map_app():
+            return FileResponse(os.path.join(candidate, "index.html"))
+
         app.mount("/", StaticFiles(directory=candidate, html=True), name="static")
         print(f"[OK] Single-Server Mode Active: Serving React Web GIS from {candidate}")
         break

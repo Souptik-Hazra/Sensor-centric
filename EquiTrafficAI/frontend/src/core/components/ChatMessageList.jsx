@@ -14,6 +14,7 @@ const parseMarkdown = (text) => {
   // Italic
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
   // Bullets
+  // oxlint-disable-next-line no-useless-escape
   html = html.replace(/^[\*-]\s+(.*$)/gim, '• $1');
   return html;
 };

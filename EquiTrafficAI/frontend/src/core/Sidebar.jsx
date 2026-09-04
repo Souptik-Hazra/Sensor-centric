@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Map, Activity, BarChart2, Settings, TrafficCone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Map, Activity, TrafficCone, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const Sidebar = () => {
@@ -9,8 +9,6 @@ const Sidebar = () => {
   const navItems = [
     { path: '/', icon: <Activity size={20} />, label: 'Monitoring' },
     { path: '/map', icon: <Map size={20} />, label: 'Web GIS' },
-    { path: '/analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
-    { path: '/settings', icon: <Settings size={20} />, label: 'Settings' },
   ];
 
   return (

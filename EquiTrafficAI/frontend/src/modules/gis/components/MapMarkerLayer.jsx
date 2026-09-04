@@ -6,6 +6,7 @@ const MapMarkerLayer = ({
   nodes = [],
   isFutureVisionActive,
   upcoming15MinWarnings = [],
+  futurePredictedSpeeds = {},
   originNodeId,
   destinationNodeId,
   selectedNodeId,
@@ -18,19 +19,28 @@ const MapMarkerLayer = ({
   return (
     <>
       {nodes.map(node => {
-        const isWarnedInFuture = isFutureVisionActive && upcoming15MinWarnings.some(w => w.id === node.id || w.sensor_id === node.sensor_id);
+        const isWarnedInFuture = isFutureVisionActive && upcoming15MinWarnings.some((warning) => {
+          const warningNodeId = warning.id ?? warning.node_id;
+          const warningSensorId = warning.sensor_id;
+          return (warningNodeId != null && String(warningNodeId) === String(node.id))
+            || (warningSensorId != null && String(warningSensorId) === String(node.sensor_id));
+        });
+        const predictedSpeed = Number(futurePredictedSpeeds[String(node.id)] ?? futurePredictedSpeeds[String(node.sensor_id)]);
+        const displaySpeed = isFutureVisionActive && Number.isFinite(predictedSpeed) ? predictedSpeed : node.speed;
+        const displayStatus = displaySpeed < 25 ? 'Congested' : displaySpeed < 50 ? 'Moderate' : 'Clear';
+        const futureColor = displaySpeed < 25 ? '#e74c3c' : displaySpeed < 50 ? '#f1c40f' : '#2ecc71';
         const isOrigin = originNodeId === node.id;
         const isDest = destinationNodeId === node.id;
         const isSelected = selectedNodeId === node.id;
 
         const markerRadius = isSelected || isOrigin || isDest || isWarnedInFuture ? 9 : 6;
-        const markerFill = isOrigin ? '#00ffcc' : isDest ? '#ff0055' : isWarnedInFuture ? '#ef4444' : (node.color || '#2ecc71');
+        const markerFill = isOrigin ? '#00ffcc' : isDest ? '#ff0055' : isFutureVisionActive && Number.isFinite(predictedSpeed) ? futureColor : (node.color || '#2ecc71');
         const markerBorder = isWarnedInFuture ? '#a855f7' : (isSelected || isOrigin || isDest ? '#ffffff' : '#1e293b');
         const markerWeight = isWarnedInFuture ? 4 : (isSelected || isOrigin || isDest ? 3 : 1);
 
         return (
           <CircleMarker
-            key={`${node.id}-${node.color}-${isWarnedInFuture}`}
+            key={`${node.id}-${node.color}-${displaySpeed}-${isWarnedInFuture}`}
             center={[node.lat, node.lon]}
             radius={markerRadius}
             pathOptions={{
@@ -43,15 +53,15 @@ const MapMarkerLayer = ({
             eventHandlers={{
               click: () => {
                 setSelectedNodeId(node.id);
-                runLlmQuery(`Which way to avoid & use if starting now for ${node.location_label || ('Sensor #' + node.sensor_id)}?`);
+                runLlmQuery(`Which way to avoid & use if starting now for Node #${node.id}, Sensor #${node.sensor_id || 'unknown'} (${node.location_label || 'this corridor'})?`);
               }
             }}
           >
             <Popup>
               <div className={styles.popupCard}>
-                <strong className={styles.popupTitle}>Sensor #{node.sensor_id || node.id}</strong><br/>
+                <strong className={styles.popupTitle}>Node #{node.id} / Sensor #{node.sensor_id || 'unknown'}</strong><br/>
                 <span>{node.location_label || 'Mapped Highway Segment'}</span><br/>
-                Speed: <strong>{node.speed} mph</strong> ({node.status})<br/>
+                Speed: <strong>{displaySpeed.toFixed(1)} mph</strong> ({isFutureVisionActive ? `${displayStatus}, forecast` : node.status})<br/>
                 
                 <div className={styles.popupBtnGroup}>
                   <button 

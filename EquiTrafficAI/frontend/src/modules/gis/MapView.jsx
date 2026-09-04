@@ -31,14 +31,12 @@ export default function MapView() {
   const [baseNodes, setBaseNodes] = useState([]);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
-  const [metrics, setMetrics] = useState({});
   const [step, setStep] = useState(96); // 08:00 AM
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(0);
   const [date, setDate] = useState('2012-03-15');
   const [speedMultiplier, setSpeedMultiplier] = useState(10);
   
-  const [showEdges, setShowEdges] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   
   // Feature 1: Mapped Sensor Origin / Destination Route Planner State
@@ -50,18 +48,10 @@ export default function MapView() {
 
   // Feature 2: 15-Minute Congestion Warning Detector State
   const [upcoming15MinWarnings, setUpcoming15MinWarnings] = useState([]);
+  const [futurePredictedSpeeds, setFuturePredictedSpeeds] = useState({});
 
   // Feature 3: "Something Interesting" — 🔮 15-Min Future Vision Mode State
   const [isFutureVisionActive, setIsFutureVisionActive] = useState(false);
-
-  // Pareto Policy State
-  const [policyGoal, setPolicyGoal] = useState('equity');
-  const [activePolicy, setActivePolicy] = useState(null);
-
-  // LLM State
-  const [llmPrompt, setLlmPrompt] = useState('');
-  const [llmResponse, setLlmResponse] = useState(null);
-  const [isLlmLoading, setIsLlmLoading] = useState(false);
 
   // Sync state to LlmChatbot via event
   useEffect(() => {
@@ -89,17 +79,13 @@ export default function MapView() {
 
   // Fetch City Datasets
   useEffect(() => {
-    const fetchCityState = async () => {
+    const loadCityState = async () => {
       try {
         const data = await fetchCityState(selectedCity);
         if (data) {
           setBaseNodes(data.sensors || []);
           setNodes(data.sensors || []);
           setEdges(data.edges || []);
-          setMetrics({
-            baseline_rsf: data.baseline_rsf || 0.0920,
-            count: data.count || (data.sensors || []).length
-          });
           if ((data.sensors || []).length > 15) {
             setOriginNodeId(data.sensors[0].id);
             setDestinationNodeId(data.sensors[15].id);
@@ -109,7 +95,7 @@ export default function MapView() {
         console.error('Failed to fetch city state:', err);
       }
     };
-    fetchCityState();
+    loadCityState();
   }, [selectedCity]);
 
   // Fetch 15-minute Congestion Warnings
@@ -118,14 +104,15 @@ export default function MapView() {
       try {
         const data = await fetchTrafficState(step, selectedCity);
         if (data) {
-          setUpcoming15MinWarnings(data.congested_nodes || []);
+          setUpcoming15MinWarnings(data.readings || data.congested_nodes || []);
+          setFuturePredictedSpeeds(data.predictedSpeeds || {});
         }
       } catch (err) {
         console.error('Failed to fetch 15-min warnings:', err);
       }
     };
     fetch15MinWarnings();
-  }, [selectedCity, step]);
+  }, [selectedCity, step, isFutureVisionActive]);
 
   // 24-Hour Playback Loop Engine
   useEffect(() => {
@@ -197,9 +184,8 @@ export default function MapView() {
   }, [targetArrivalTime, selectedCity, originNodeId, destinationNodeId]);
 
   const runLlmQuery = useCallback(async (customPrompt = '') => {
-    setIsLlmLoading(true);
     const targetSensor = selectedNodeId !== null ? selectedNodeId : 0;
-    const promptText = customPrompt || llmPrompt || `Which way to avoid and use if starting now for Sensor #${targetSensor}?`;
+    const promptText = customPrompt || `Which way to avoid and use if starting now for Sensor #${targetSensor}?`;
     
     try {
       const data = await requestLlmReasoning({
@@ -211,7 +197,6 @@ export default function MapView() {
           destination_id: destinationNodeId
       });
       if (data) {
-        setLlmResponse(data.llm_response);
         if (data.route_result || data.recommended_path_coords) {
           window.dispatchEvent(new CustomEvent('llm-route-result', {
             detail: data.route_result || {
@@ -223,10 +208,8 @@ export default function MapView() {
       }
     } catch (err) {
       console.error('Failed to run LLM query:', err);
-    } finally {
-      setIsLlmLoading(false);
     }
-  }, [selectedNodeId, llmPrompt, selectedCity, step, originNodeId, destinationNodeId]);
+  }, [selectedNodeId, selectedCity, step, originNodeId, destinationNodeId]);
 
   const mapCenter = useMemo(() => {
     switch (selectedCity) {
@@ -260,7 +243,7 @@ export default function MapView() {
             attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
             url={CARTO_URL}
           />
-          {showEdges && edges.map((edge, idx) => (
+          {edges.map((edge, idx) => (
             <Polyline
               key={idx}
               positions={edge}
@@ -294,6 +277,7 @@ export default function MapView() {
             nodes={nodes}
             isFutureVisionActive={isFutureVisionActive}
             upcoming15MinWarnings={upcoming15MinWarnings}
+            futurePredictedSpeeds={futurePredictedSpeeds}
             originNodeId={originNodeId}
             destinationNodeId={destinationNodeId}
             selectedNodeId={selectedNodeId}

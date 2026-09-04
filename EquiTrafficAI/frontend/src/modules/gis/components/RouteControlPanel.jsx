@@ -40,7 +40,7 @@ const RouteControlPanel = ({
           >
             {nodes.map(n => (
               <option key={n.id} value={n.id}>
-                Sensor #{n.sensor_id || n.id} — {n.location_label || `Corridor Node #${n.id}`} ({n.speed} mph)
+                Node #{n.id} / Sensor #{n.sensor_id || 'unknown'} — {n.location_label || `Corridor Node #${n.id}`} ({n.speed} mph)
               </option>
             ))}
           </select>
@@ -64,7 +64,7 @@ const RouteControlPanel = ({
           >
             {nodes.map(n => (
               <option key={n.id} value={n.id}>
-                Sensor #{n.sensor_id || n.id} — {n.location_label || `Corridor Node #${n.id}`} ({n.speed} mph)
+                Node #{n.id} / Sensor #{n.sensor_id || 'unknown'} — {n.location_label || `Corridor Node #${n.id}`} ({n.speed} mph)
               </option>
             ))}
           </select>

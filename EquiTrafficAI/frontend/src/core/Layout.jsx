@@ -12,8 +12,6 @@ const Layout = () => {
     switch (location.pathname) {
       case '/': return 'Traffic Monitoring';
       case '/map': return 'Web GIS';
-      case '/analytics': return 'Data Analytics';
-      case '/settings': return 'System Settings';
       default: return 'Traffic System';
     }
   };

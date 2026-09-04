@@ -45,15 +45,21 @@ export const fetchTrafficState = async (timestampIndex = 0, city = "la") => {
     const res = await fetch(`${BACKEND_URL}/api/predict/congestion_15min?city=${encodeURIComponent(city)}&timestamp_index=${timestampIndex}`);
     if (res.ok) {
       const data = await res.json();
+      const congestedNodes = data.congested_nodes || [];
       return {
         timestampIndex,
-        readings: data.congested_nodes || []
+        horizon: data.horizon || "15-min",
+        congestedSensorsCount: data.congested_sensors_count || congestedNodes.length,
+        congested_nodes: congestedNodes,
+        predictedSpeeds: data.predicted_speeds || {},
+        // Keep the generic name for existing consumers.
+        readings: congestedNodes
       };
     }
   } catch (err) {
     console.warn("Traffic forecast fetch warning:", err);
   }
-  return { timestampIndex, readings: [] };
+  return { timestampIndex, horizon: "15-min", congestedSensorsCount: 0, congested_nodes: [], predictedSpeeds: {}, readings: [] };
 };
 
 export const planSmartRoute = async (originId, destId, city = "la", targetTime = "08:30 AM") => {
@@ -79,37 +85,5 @@ export const requestLlmReasoning = async (payload) => {
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error(`LLM request failed: ${res.status}`);
-  return res.json();
-};
-
-export const fetchModelHealth = async () => {
-  const res = await fetch(`${BACKEND_URL}/api/health/models`);
-  if (!res.ok) throw new Error(`Model health request failed: ${res.status}`);
-  return res.json();
-};
-
-export const fetchAnalyticsMetrics = async (city = "la") => {
-  const res = await fetch(`${BACKEND_URL}/api/analytics/metrics?city=${encodeURIComponent(city)}`);
-  if (!res.ok) throw new Error(`Analytics request failed: ${res.status}`);
-  return res.json();
-};
-
-export const diagnoseSensor = async (sensorId, city = "la") => {
-  const res = await fetch(`${BACKEND_URL}/api/diagnose/causal`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sensor_id: sensorId, city })
-  });
-  if (!res.ok) throw new Error(`Causal diagnosis request failed: ${res.status}`);
-  return res.json();
-};
-
-export const fetchPolicy = async (goal = "equity") => {
-  const res = await fetch(`${BACKEND_URL}/api/policy/pareto`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ goal })
-  });
-  if (!res.ok) throw new Error(`Policy request failed: ${res.status}`);
   return res.json();
 };

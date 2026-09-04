@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchSensors, fetchTrafficState } from '../services/apiService';
+import { fetchSensors } from '../services/apiService';
 
 const useTrafficStore = create((set, get) => ({
   // State
@@ -15,12 +15,13 @@ const useTrafficStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const topology = await fetchSensors();
-      const initialTraffic = await fetchTrafficState(0);
       
       set({
         sensors: topology.sensors,
         mapCenter: topology.center,
-        trafficData: initialTraffic.readings,
+        // The monitoring table needs the complete telemetry snapshot. The
+        // 15-minute endpoint only returns warning nodes, not every sensor.
+        trafficData: topology.sensors,
         isLoading: false
       });
     } catch (err) {
@@ -28,18 +29,15 @@ const useTrafficStore = create((set, get) => ({
     }
   },
 
-  setTimestampIndex: async (index, city = "la") => {
+  setTimestampIndex: async (index, _city = "la") => {
     // Only update if it changed
     if (index === get().currentTimestampIndex) return;
     
     set({ currentTimestampIndex: index });
     
-    try {
-      const newData = await fetchTrafficState(index, city);
-      set({ trafficData: newData.readings });
-    } catch (err) {
-      console.error("Failed to fetch traffic state", err);
-    }
+    // The monitoring view currently has no timestamp playback control. Keep
+    // this action harmless for existing callers until a full telemetry
+    // timestamp endpoint is introduced.
   }
 }));
 
