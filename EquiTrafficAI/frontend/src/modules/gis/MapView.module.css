@@ -143,7 +143,8 @@
   display: inline-block;
   width: 16px;
   height: 4px;
-  background-color: #00ffcc;
+  background-color: #2dd4bf;
+  border: 1px solid #102a43;
   margin-right: 6px;
 }
 

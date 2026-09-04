@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, Pane, TileLayer, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from './MapView.module.css';
 import MapLegend from './components/MapLegend';
@@ -251,16 +251,26 @@ export default function MapView() {
             />
           ))}
 
-          {/* HIGHLIGHTED RECOMMENDED ROUTE EDGES (Clean Continuous Neon Cyan Path) */}
+          {/* HIGHLIGHTED RECOMMENDED ROUTE EDGES */}
           {routeResult && routeResult.recommended_path_coords && (
-            <Polyline
-              positions={
-                Array.isArray(routeResult.recommended_path_coords[0]?.[0])
-                  ? routeResult.recommended_path_coords.map(pair => pair).flat()
-                  : routeResult.recommended_path_coords
-              }
-              pathOptions={{ color: '#00f2fe', weight: 7, opacity: 1.0, lineCap: 'round', lineJoin: 'round' }}
-            />
+            <Pane name="recommendedRoute" style={{ zIndex: 410 }}>
+              <Polyline
+                positions={
+                  Array.isArray(routeResult.recommended_path_coords[0]?.[0])
+                    ? routeResult.recommended_path_coords.map(pair => pair).flat()
+                    : routeResult.recommended_path_coords
+                }
+                pathOptions={{ color: '#102A43', weight: 11, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
+              />
+              <Polyline
+                positions={
+                  Array.isArray(routeResult.recommended_path_coords[0]?.[0])
+                    ? routeResult.recommended_path_coords.map(pair => pair).flat()
+                    : routeResult.recommended_path_coords
+                }
+                pathOptions={{ color: '#2DD4BF', weight: 6, opacity: 1.0, lineCap: 'round', lineJoin: 'round' }}
+              />
+            </Pane>
           )}
 
           {/* HIGHLIGHTED CONGESTED BOTTLENECK EDGES TO AVOID (Pulsing Crimson Red) */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CircleMarker, Popup } from 'react-leaflet';
+import { CircleMarker, Pane, Popup } from 'react-leaflet';
 import styles from '../MapView.module.css';
 
 const MapMarkerLayer = ({
@@ -17,7 +17,7 @@ const MapMarkerLayer = ({
   calculateSmartRoute
 }) => {
   return (
-    <>
+    <Pane name="trafficNodes" style={{ zIndex: 650 }}>
       {nodes.map(node => {
         const isWarnedInFuture = isFutureVisionActive && upcoming15MinWarnings.some((warning) => {
           const warningNodeId = warning.id ?? warning.node_id;
@@ -98,7 +98,7 @@ const MapMarkerLayer = ({
           </CircleMarker>
         );
       })}
-    </>
+    </Pane>
   );
 };
 
