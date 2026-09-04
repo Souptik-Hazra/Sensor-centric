@@ -17,7 +17,7 @@ const MapMarkerLayer = ({
   calculateSmartRoute
 }) => {
   return (
-    <Pane name="trafficNodes" style={{ zIndex: 650 }}>
+    <Pane name="trafficNodes" style={{ zIndex: 420 }}>
       {nodes.map(node => {
         const isWarnedInFuture = isFutureVisionActive && upcoming15MinWarnings.some((warning) => {
           const warningNodeId = warning.id ?? warning.node_id;
@@ -65,7 +65,12 @@ const MapMarkerLayer = ({
                 
                 <div className={styles.popupBtnGroup}>
                   <button 
-                    onClick={() => {
+                    type="button"
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      event.nativeEvent.stopImmediatePropagation();
                       setOriginNodeId(node.id);
                       let targetDest = destinationNodeId;
                       if (node.id === destinationNodeId) {
@@ -79,7 +84,12 @@ const MapMarkerLayer = ({
                     🟢 Set as Origin
                   </button>
                   <button 
-                    onClick={() => {
+                    type="button"
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      event.nativeEvent.stopImmediatePropagation();
                       setDestinationNodeId(node.id);
                       let targetOrigin = originNodeId;
                       if (node.id === originNodeId) {

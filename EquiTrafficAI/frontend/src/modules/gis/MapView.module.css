@@ -180,6 +180,8 @@
 }
 
 .card {
+  position: relative;
+  z-index: 1001;
   background-color: #0f172a;
   border: 1px solid #334155;
   border-radius: 10px;
@@ -276,6 +278,7 @@
 
 
 .popupCard { font-size: 11px; color: #0f172a; padding: 2px; }
+:global(.leaflet-popup-pane) { z-index: 700 !important; }
 .popupTitle { color: #0284c7; font-weight: 700; }
 .popupBtnGroup { display: flex; gap: 4px; margin-top: 6px; }
 

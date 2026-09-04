@@ -236,7 +236,7 @@ export default function MapView() {
       />
 
       <div className={styles.mapWrapper}>
-        <MapContainer key={selectedCity} center={mapCenter} zoom={selectedCity === 'sd' ? 10 : 11} preferCanvas={true} style={{ height: "100%", width: "100%" }} zoomControl={false}>
+        <MapContainer key={selectedCity} center={mapCenter} zoom={selectedCity === 'sd' ? 10 : 11} preferCanvas={false} style={{ height: "100%", width: "100%" }} zoomControl={false}>
           <MapResizeHandler isRightSidebarOpen={isRightSidebarOpen} />
           <TileLayer
             className={styles.darkTileLayer}

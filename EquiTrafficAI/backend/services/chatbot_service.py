@@ -119,11 +119,25 @@ class TrafficChatbotService:
             origin_label = route_result.get("origin", {}).get("label", f"Node #{route_origin.get('id')}")
             destination_label = route_result.get("destination", {}).get("label", f"Node #{route_destination.get('id')}")
             bottleneck = primary.get("bottleneck_detected", False)
+            alternate = route_result.get("recommended_alternate_route", {})
+            primary_time = float(primary.get("travel_time_minutes", 14))
+            alternate_time = float(alternate.get("travel_time_minutes", primary_time))
+            time_delta = round(primary_time - alternate_time, 1)
+            time_delta_label = (
+                f"Time Saved: {time_delta:.1f} mins"
+                if time_delta > 0
+                else f"Time Lost: {abs(time_delta):.1f} mins"
+                if time_delta < 0
+                else "Time Difference: 0.0 mins"
+            )
             response_text = (
                 "EquiTraffic-GPT (GWNet Shortest Path Planner)\n\n"
                 f"Route: {origin_label} -> {destination_label}\n\n"
                 f"Distance: {primary.get('distance_miles', 4.2):.1f} miles\n"
-                f"Estimated Travel Time: {primary.get('travel_time_minutes', 14):.1f} mins\n"
+                f"Estimated Travel Time: {primary_time:.1f} mins\n"
+                f"Alternate Distance: {float(alternate.get('distance_miles', primary.get('distance_miles', 4.2))):.1f} miles\n"
+                f"Alternate Travel Time: {alternate_time:.1f} mins\n"
+                f"{time_delta_label}\n"
                 f"Average Speed: {primary.get('average_speed_mph', 45.0):.1f} mph\n"
                 f"Highway Waypoints: {primary.get('path_sensor_count', 0)} sensors\n"
                 f"Bottleneck Detected: {'Yes - reroute recommended' if bottleneck else 'No - clear path'}\n\n"
