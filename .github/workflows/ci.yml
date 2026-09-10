@@ -267,6 +267,7 @@ jobs:
           routes = {
               route.path
               for route in app.routes
+              if hasattr(route, 'path')
           }
 
           required_routes = {
