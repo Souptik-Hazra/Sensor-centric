@@ -222,7 +222,7 @@ jobs:
           PY
 
       # ----------------------------------------------------------------------
-      # GWN​​ET ADAPTER VALIDATION
+      # GWNET ADAPTER VALIDATION
       # ----------------------------------------------------------------------
       - name: Validate GWNet Adapter Metadata
         run: |
@@ -257,18 +257,31 @@ jobs:
       # ----------------------------------------------------------------------
       # FASTAPI ROUTE VALIDATION
       #
-      # These are the routes actually exposed by the current backend.
+      # FastAPI can contain nested IncludedRouter objects. Recursively inspect
+      # all nested routers so the actual application routes are discovered.
       # ----------------------------------------------------------------------
       - name: Validate FastAPI Routes
         run: |
           python - <<'PY'
           from EquiTrafficAI.backend.backend import app
 
-          routes = {
-              route.path
-              for route in app.routes
-              if hasattr(route, 'path')
-          }
+          def collect_routes(router):
+              paths = set()
+
+              for route in getattr(router, 'routes', []):
+                  path = getattr(route, 'path', None)
+
+                  if path:
+                      paths.add(path)
+
+                  nested_routes = getattr(route, 'routes', None)
+
+                  if nested_routes:
+                      paths.update(collect_routes(route))
+
+              return paths
+
+          routes = collect_routes(app)
 
           required_routes = {
               '/api/health/models',
@@ -283,6 +296,11 @@ jobs:
           }
 
           missing = required_routes - routes
+
+          print(
+              '[+] Discovered routes:',
+              sorted(routes)
+          )
 
           print(
               '[+] Required routes:',
