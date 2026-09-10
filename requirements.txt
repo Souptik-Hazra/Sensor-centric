@@ -1,17 +1,21 @@
 # ============================================================================
 # METR-LA Structural Causal Digital Twin — Python Requirements
-# Verified on: Python 3.11 | Windows 11 | Pipeline: 13/13 PASSED (40.76s)
+# Verified on: Python 3.11 | Windows 11
 # ============================================================================
 
 # --- Deep Learning & GNN Model Training (DCRNN, GWNet, DLinear, HA) ---
 torch>=2.0.0                    # PyTorch tensor engine (CPU/GPU)
+
+# --- Backend API ---
 fastapi>=0.115.0                # REST API server
 uvicorn>=0.30.0                 # ASGI server
 python-dotenv>=1.0.0            # Environment configuration
 PyYAML>=6.0                     # YAML configuration
+
+# --- LLM / LangChain ---
 langchain-core>=0.3.0           # Provider-neutral LLM interface
-langchain-google-genai>=2.0.0  # Gemini LangChain adapter
-langchain-groq>=0.2.0         # Groq LangChain adapter
+langchain-google-genai>=2.0.0   # Gemini LangChain adapter
+langchain-groq>=0.2.0           # Groq LangChain adapter
 
 # --- Scientific Computing & SIMD Vectorization ---
 numpy>=1.23.0                   # C-level SIMD array operations & matrix broadcasting
@@ -27,4 +31,4 @@ matplotlib>=3.5.0               # Publication-grade 300 DPI SCM DAG & architectu
 
 # --- HuggingFace METR-LA Dataset Loading ---
 datasets>=2.10.0                # HuggingFace Datasets (witgaw/METR-LA)
-huggingface-hub>=0.15.0         # HuggingFace Hub file downloads (adj_mx.npy, sensor_locations.csv)
+huggingface-hub>=0.15.0         # HuggingFace Hub file downloads
