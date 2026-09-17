@@ -1,13 +1,8 @@
 import React from 'react';
-import { Send } from 'lucide-react';
+import {Send} from 'lucide-react';
 import styles from '../LlmChatbot.module.css';
 
-const ChatInputFooter = ({
-  inputPrompt,
-  setInputPrompt,
-  handleSendMessage,
-  isLoading
-}) => {
+const ChatInputFooter=({inputPrompt,setInputPrompt,handleSendMessage,isLoading}) => {
   return (
     <div className={styles.chatFooter}>
       <input 
@@ -18,7 +13,7 @@ const ChatInputFooter = ({
         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
         className={styles.chatInput}
         disabled={isLoading}
-        aria-label="Ask EquiTraffic-GPT a traffic question"
+        aria-label="Ask LLM about traffic question"
       />
       <button 
         onClick={() => handleSendMessage()}

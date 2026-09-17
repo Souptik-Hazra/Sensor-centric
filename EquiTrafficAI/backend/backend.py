@@ -18,16 +18,16 @@ from .routers.state import router as state_router
 
 async def lifespan(app: FastAPI):
     load_all_data()
-    app.state.state_data = app_state.state_data
-    app.state.gwnet_adapters = app_state.gwnet_adapters
-    app.state.route_graph_data = app_state.route_graph_data
-    app.state.la_location_map = app_state.la_location_map
-    app.state.chatbot_service = app_state.chatbot_service
-    app.state.route_planner = app_state.route_planner
+    app.state.state_data=app_state.state_data
+    app.state.gwnet_adapters=app_state.gwnet_adapters
+    app.state.route_graph_data=app_state.route_graph_data
+    app.state.la_location_map=app_state.la_location_map
+    app.state.chatbot_service=app_state.chatbot_service
+    app.state.route_planner=app_state.route_planner
     yield
 
 
-app = FastAPI(
+app=FastAPI(
     title="EquiTraffic-GPT Master API",
     description="SOTA Traffic LLM Copilot & Graph WaveNet (GWNet) Neural Forecasting API",
     version="2.0.0",
@@ -50,7 +50,7 @@ app.include_router(routing_router)
 app.include_router(state_router)
 
 
-dist_candidates = [
+dist_candidates=[
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend", "dist")),
 ]

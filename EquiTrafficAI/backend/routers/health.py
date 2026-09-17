@@ -1,8 +1,7 @@
 """Model health API routes."""
-
 from fastapi import APIRouter, Request
 
-router = APIRouter(prefix="/api/health", tags=["Neural Forecasting & GWNet"])
+router=APIRouter(prefix="/api/health", tags=["Neural Forecasting & GWNet"])
 
 
 @router.get("/models")

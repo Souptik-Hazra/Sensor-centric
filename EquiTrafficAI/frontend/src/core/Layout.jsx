@@ -1,14 +1,13 @@
-import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import LlmChatbot from './LlmChatbot';
 import styles from './Layout.module.css';
 
-const Layout = () => {
-  const location = useLocation();
-  const isMapPage = location.pathname === '/map';
+const Layout=()=> {
+  const location=useLocation();
+  const isMapPage=location.pathname === '/map';
   
-  const getPageTitle = () => {
+  const getPageTitle=()=> {
     switch (location.pathname) {
       case '/': return 'Traffic Monitoring';
       case '/map': return 'Web GIS';
@@ -29,8 +28,6 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
-
-      {/* High-Impact Interactive EquiTraffic-GPT Chatbot Widget */}
       <LlmChatbot />
     </div>
   );

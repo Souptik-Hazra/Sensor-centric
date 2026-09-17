@@ -11,14 +11,14 @@ import MapMarkerLayer from './components/MapMarkerLayer';
 import { fetchCityState, fetchTrafficState, planSmartRoute, requestLlmReasoning } from '../../services/apiService';
 
 import simulationData from '../../core/simulationData.json';
-const { empiricalProfiles } = simulationData;
+const { empiricalProfiles }=simulationData;
 
-const CARTO_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const CARTO_URL='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 function MapResizeHandler({ isRightSidebarOpen }) {
-  const map = useMap();
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  const map=useMap();
+  useEffect(()=>{
+    const timer=setTimeout(()=>{
       map.invalidateSize();
     }, 250);
     return () => clearTimeout(timer);
@@ -27,34 +27,34 @@ function MapResizeHandler({ isRightSidebarOpen }) {
 }
 
 export default function MapView() {
-  const [selectedCity, setSelectedCity] = useState('la');
-  const [baseNodes, setBaseNodes] = useState([]);
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [step, setStep] = useState(96); // 08:00 AM
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedNodeId, setSelectedNodeId] = useState(0);
-  const [date, setDate] = useState('2012-03-15');
-  const [speedMultiplier, setSpeedMultiplier] = useState(10);
+  const [selectedCity, setSelectedCity]=useState('la');
+  const [baseNodes, setBaseNodes]=useState([]);
+  const [nodes, setNodes]=useState([]);
+  const [edges, setEdges]=useState([]);
+  const [step, setStep]=useState(96); // 08:00 AM
+  const [isPlaying, setIsPlaying]=useState(false);
+  const [selectedNodeId, setSelectedNodeId]=useState(0);
+  const [date, setDate]=useState('2012-03-15');
+  const [speedMultiplier, setSpeedMultiplier]=useState(10);
   
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen]=useState(true);
   
   // Feature 1: Mapped Sensor Origin / Destination Route Planner State
-  const [originNodeId, setOriginNodeId] = useState(0);
-  const [destinationNodeId, setDestinationNodeId] = useState(15);
-  const [targetArrivalTime, setTargetArrivalTime] = useState('08:45 AM');
-  const [routeResult, setRouteResult] = useState(null);
-  const [isRouting, setIsRouting] = useState(false);
+  const [originNodeId, setOriginNodeId]=useState(0);
+  const [destinationNodeId, setDestinationNodeId]=useState(15);
+  const [targetArrivalTime, setTargetArrivalTime]=useState('08:45 AM');
+  const [routeResult, setRouteResult]=useState(null);
+  const [isRouting, setIsRouting]=useState(false);
 
   // Feature 2: 15-Minute Congestion Warning Detector State
-  const [upcoming15MinWarnings, setUpcoming15MinWarnings] = useState([]);
-  const [futurePredictedSpeeds, setFuturePredictedSpeeds] = useState({});
+  const [upcoming15MinWarnings, setUpcoming15MinWarnings]=useState([]);
+  const [futurePredictedSpeeds, setFuturePredictedSpeeds]=useState({});
 
   // Feature 3: "Something Interesting" — 🔮 15-Min Future Vision Mode State
-  const [isFutureVisionActive, setIsFutureVisionActive] = useState(false);
+  const [isFutureVisionActive, setIsFutureVisionActive]=useState(false);
 
   // Sync state to LlmChatbot via event
-  useEffect(() => {
+  useEffect(()=>{
     window.dispatchEvent(new CustomEvent('app-state-sync', {
       detail: { 
         step: step, 
@@ -67,9 +67,9 @@ export default function MapView() {
   }, [step, selectedCity, date, originNodeId, destinationNodeId]);
 
   // Listen for LLM chatbot route results (cross-component event)
-  useEffect(() => {
-    const handleLlmRoute = (e) => {
-      if (e.detail) {
+  useEffect(()=>{
+    const handleLlmRoute=(e)=>{
+      if(e.detail) {
         setRouteResult(e.detail);
       }
     };
@@ -78,15 +78,15 @@ export default function MapView() {
   }, []);
 
   // Fetch City Datasets
-  useEffect(() => {
-    const loadCityState = async () => {
+  useEffect(()=>{
+    const loadCityState=async ()=>{
       try {
-        const data = await fetchCityState(selectedCity);
-        if (data) {
+        const data=await fetchCityState(selectedCity);
+        if(data) {
           setBaseNodes(data.sensors || []);
           setNodes(data.sensors || []);
           setEdges(data.edges || []);
-          if ((data.sensors || []).length > 15) {
+          if((data.sensors || []).length > 15) {
             setOriginNodeId(data.sensors[0].id);
             setDestinationNodeId(data.sensors[15].id);
           }
@@ -99,11 +99,11 @@ export default function MapView() {
   }, [selectedCity]);
 
   // Fetch 15-minute Congestion Warnings
-  useEffect(() => {
-    const fetch15MinWarnings = async () => {
+  useEffect(()=>{
+    const fetch15MinWarnings=async ()=>{
       try {
-        const data = await fetchTrafficState(step, selectedCity);
-        if (data) {
+        const data=await fetchTrafficState(step, selectedCity);
+        if(data) {
           setUpcoming15MinWarnings(data.readings || data.congested_nodes || []);
           setFuturePredictedSpeeds(data.predictedSpeeds || {});
         }
@@ -115,11 +115,11 @@ export default function MapView() {
   }, [selectedCity, step, isFutureVisionActive]);
 
   // 24-Hour Playback Loop Engine
-  useEffect(() => {
+  useEffect(()=>{
     let timer;
-    if (isPlaying) {
-      const intervalMs = Math.max(50, Math.floor(1000 / speedMultiplier));
-      timer = setInterval(() => {
+    if(isPlaying) {
+      const intervalMs=Math.max(50, Math.floor(1000 / speedMultiplier));
+      timer=setInterval(()=>{
         setStep((prev) => (prev + 1) % 288);
       }, intervalMs);
     }
@@ -127,31 +127,31 @@ export default function MapView() {
   }, [isPlaying, speedMultiplier]);
 
   // Dynamic Speed Profile Calculation
-  useEffect(() => {
-    if (baseNodes.length === 0) return;
-    const updated = baseNodes.map((n) => {
+  useEffect(()=>{
+    if(baseNodes.length === 0) return;
+    const updated=baseNodes.map((n)=>{
       let speed;
-      const empirical = empiricalProfiles ? empiricalProfiles[String(n.sensor_id || n.id)] : null;
-      if (empirical && empirical.length > step) {
-        speed = empirical[step];
+      const empirical=empiricalProfiles ? empiricalProfiles[String(n.sensor_id || n.id)] : null;
+      if(empirical && empirical.length > step) {
+        speed=empirical[step];
       } else {
-        const t = step * 5 / 60.0;
-        const morningPeak = Math.exp(-Math.pow(t - 8.0, 2) / 4.0);
-        const eveningPeak = Math.exp(-Math.pow(t - 17.5, 2) / 4.0);
-        const baseSpeed = n.speed || 58.5;
-        const dip = (morningPeak + eveningPeak) * 30.0;
-        const noise = (Math.sin(n.id * 1.5 + step * 0.2) * 2.5);
-        speed = Math.max(10.0, Math.min(75.0, baseSpeed - dip + noise));
+        const t=step * 5 / 60.0;
+        const morningPeak=Math.exp(-Math.pow(t - 8.0, 2) / 4.0);
+        const eveningPeak=Math.exp(-Math.pow(t - 17.5, 2) / 4.0);
+        const baseSpeed=n.speed || 58.5;
+        const dip=(morningPeak + eveningPeak) * 30.0;
+        const noise=(Math.sin(n.id * 1.5 + step * 0.2) * 2.5);
+        speed=Math.max(10.0, Math.min(75.0, baseSpeed - dip + noise));
       }
 
-      let color = '#2ecc71';
-      let status = 'Clear';
-      if (speed < 25.0) { color = '#e74c3c'; status = 'Congested'; }
-      else if (speed < 45.0) { color = '#f1c40f'; status = 'Moderate'; }
+      let color='#2ecc71';
+      let status='Clear';
+      if(speed < 25.0) { color='#e74c3c'; status='Congested'; }
+      else if(speed < 45.0) { color='#f1c40f'; status='Moderate'; }
 
-      if (n.zero_rate && n.zero_rate > 0.4) {
-        color = '#38bdf8';
-        status = 'Zero-Flow Anomaly';
+      if(n.zero_rate && n.zero_rate > 0.4) {
+        color='#38bdf8';
+        status='Zero-Flow Anomaly';
       }
 
       return { ...n, speed: Math.round(speed * 10) / 10, color, status };
@@ -159,23 +159,23 @@ export default function MapView() {
     setNodes(updated);
   }, [baseNodes, step]);
 
-  const getDisplayTime = useCallback((stepIdx) => {
-    const totalMinutes = stepIdx * 5;
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 === 0 ? 12 : hours % 12;
-    const padMins = mins < 10 ? `0${mins}` : mins;
+  const getDisplayTime=useCallback((stepIdx)=>{
+    const totalMinutes=stepIdx * 5;
+    const hours=Math.floor(totalMinutes / 60);
+    const mins=totalMinutes % 60;
+    const period=hours >= 12 ? 'PM' : 'AM';
+    const displayHours=hours % 12 === 0 ? 12 : hours % 12;
+    const padMins=mins < 10 ? `0${mins}` : mins;
     return `${displayHours}:${padMins} ${period}`;
   }, []);
 
-  const calculateSmartRoute = useCallback(async (oId, dId) => {
+  const calculateSmartRoute=useCallback(async (oId, dId)=>{
     setIsRouting(true);
-    const actualOrigin = oId !== undefined ? oId : originNodeId;
-    const actualDest = dId !== undefined ? dId : destinationNodeId;
+    const actualOrigin=oId !== undefined ? oId : originNodeId;
+    const actualDest=dId !== undefined ? dId : destinationNodeId;
     try {
-      const data = await planSmartRoute(actualOrigin, actualDest, selectedCity, targetArrivalTime);
-      if (data) setRouteResult(data);
+      const data=await planSmartRoute(actualOrigin, actualDest, selectedCity, targetArrivalTime);
+      if(data) setRouteResult(data);
     } catch (err) {
       console.error('Failed to calculate route:', err);
     } finally {
@@ -183,12 +183,12 @@ export default function MapView() {
     }
   }, [targetArrivalTime, selectedCity, originNodeId, destinationNodeId]);
 
-  const runLlmQuery = useCallback(async (customPrompt = '') => {
-    const targetSensor = selectedNodeId !== null ? selectedNodeId : 0;
-    const promptText = customPrompt || `Which way to avoid and use if starting now for Sensor #${targetSensor}?`;
+  const runLlmQuery=useCallback(async (customPrompt='')=>{
+    const targetSensor=selectedNodeId !== null ? selectedNodeId : 0;
+    const promptText=customPrompt || `Which way to avoid and use if starting now for Sensor #${targetSensor}?`;
     
     try {
-      const data = await requestLlmReasoning({
+      const data=await requestLlmReasoning({
           sensor_id: targetSensor,
           prompt: promptText,
           city: selectedCity,
@@ -196,8 +196,8 @@ export default function MapView() {
           origin_id: originNodeId,
           destination_id: destinationNodeId
       });
-      if (data) {
-        if (data.route_result || data.recommended_path_coords) {
+      if(data) {
+        if(data.route_result || data.recommended_path_coords) {
           window.dispatchEvent(new CustomEvent('llm-route-result', {
             detail: data.route_result || {
               recommended_path_coords: data.recommended_path_coords,
@@ -211,7 +211,7 @@ export default function MapView() {
     }
   }, [selectedNodeId, selectedCity, step, originNodeId, destinationNodeId]);
 
-  const mapCenter = useMemo(() => {
+  const mapCenter=useMemo(()=>{
     switch (selectedCity) {
       case 'sd': return [32.7157, -117.1611];
       case 'pems04': return [37.7749, -122.4194];
@@ -243,7 +243,7 @@ export default function MapView() {
             attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
             url={CARTO_URL}
           />
-          {edges.map((edge, idx) => (
+          {edges.map((edge, idx)=>(
             <Polyline
               key={idx}
               positions={edge}
@@ -274,7 +274,7 @@ export default function MapView() {
           )}
 
           {/* HIGHLIGHTED CONGESTED BOTTLENECK EDGES TO AVOID (Pulsing Crimson Red) */}
-          {routeResult && routeResult.congested_avoid_coords && routeResult.congested_avoid_coords.map((pair, idx) => (
+          {routeResult && routeResult.congested_avoid_coords && routeResult.congested_avoid_coords.map((pair, idx)=>(
             <Polyline
               key={`avoid-${idx}`}
               positions={pair}

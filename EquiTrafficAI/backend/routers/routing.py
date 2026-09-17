@@ -6,7 +6,7 @@ import numpy as np
 from ..services.routing_service import plan_smart_route
 from ..schemas import RerouteRequest, RouteRequest
 
-router = APIRouter(tags=["Routing & Navigation"])
+router=APIRouter(tags=["Routing & Navigation"])
 
 
 @router.post(
@@ -25,15 +25,15 @@ def plan_route(request: Request, route_request: RouteRequest):
 @router.post("/reroute", response_description="Reroute Advisory Report")
 def reroute(request: Request, reroute_request: RerouteRequest):
     """Generate a bottleneck rerouting advisory for a corridor sensor."""
-    node_id = str(reroute_request.target_node_id)
-    location_map = request.app.state.la_location_map
-    corridor_name = location_map.get(
+    node_id=str(reroute_request.target_node_id)
+    location_map=request.app.state.la_location_map
+    corridor_name=location_map.get(
         node_id,
         {},
     ).get("location_label", f"Freeway Corridor Node #{node_id}")
-    speeds = np.asarray(reroute_request.predicted_speeds)
-    minimum_speed = float(np.min(speeds))
-    average_speed = float(np.mean(speeds))
+    speeds=np.asarray(reroute_request.predicted_speeds)
+    minimum_speed=float(np.min(speeds))
+    average_speed=float(np.mean(speeds))
     return {
         "node_report": {
             "queried_sensor": node_id,

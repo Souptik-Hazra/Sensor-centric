@@ -14,22 +14,22 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 class TraCIController:
-    def __init__(self, port: int = 8873, use_gui: bool = False):
-        self.port = port
-        self.use_gui = use_gui
-        self.is_connected = False
+    def __init__(self, port: int=8873, use_gui: bool=False):
+        self.port=port
+        self.use_gui=use_gui
+        self.is_connected=False
         self._check_traci()
 
     def _check_traci(self):
         try:
             import traci
-            self.traci = traci
+            self.traci=traci
             print("[+] SUMO / TraCI Python Module Available.")
         except ImportError:
-            self.traci = None
+            self.traci=None
             print("[!] TraCI notice: SUMO TraCI python package not installed. Running in Mock TraCI Mode.")
 
-    def apply_copilot_reroute(self, sensor_id: str, new_route_edges: list, green_time_boost_sec: int = 15):
+    def apply_copilot_reroute(self, sensor_id: str, new_route_edges: list, green_time_boost_sec: int=15):
         """
         Dynamically adjusts SUMO microscopic signal timing plans and reroutes vehicle streams.
         """
@@ -55,6 +55,6 @@ class TraCIController:
         }
 
 if __name__ == "__main__":
-    controller = TraCIController()
-    res = controller.apply_copilot_reroute("43", ["edge_sr134_east", "edge_glendale_bypass", "edge_i5_north"])
+    controller=TraCIController()
+    res=controller.apply_copilot_reroute("43", ["edge_sr134_east", "edge_glendale_bypass", "edge_i5_north"])
     print(f"\n[+] TraCI Controller Verification Output:\n{json.dumps(res, indent=2)}")

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Map, Activity, TrafficCone, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
-const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+const Sidebar=()=>{
+  const [isCollapsed, setIsCollapsed]=useState(false);
 
-  const navItems = [
+  const navItems=[
     { path: '/', icon: <Activity size={20} />, label: 'Monitoring' },
     { path: '/map', icon: <Map size={20} />, label: 'Web GIS' },
   ];
@@ -19,7 +19,7 @@ const Sidebar = () => {
       </div>
 
       <nav className={styles.nav} aria-label="Main Navigation">
-        {navItems.map((item) => (
+        {navItems.map((item)=>(
           <NavLink
             key={item.path}
             to={item.path}

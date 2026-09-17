@@ -7,25 +7,25 @@ load_dotenv()
 
 class TrafficLLMEngine:
     def __init__(self):
-        self.model_config = self._load_model_config()
-        llm_cfg = self.model_config.get('traffic_llm_engine', {})
-        self.provider = os.getenv("LLM_PROVIDER", "google_genai").lower()
-        configured_model = llm_cfg.get('primary_model', 'gemini-2.5-flash-lite')
-        self.model_name = os.getenv(
+        self.model_config=self._load_model_config()
+        llm_cfg=self.model_config.get('traffic_llm_engine', {})
+        self.provider=os.getenv("LLM_PROVIDER", "google_genai").lower()
+        configured_model=llm_cfg.get('primary_model', 'gemini-2.5-flash-lite')
+        self.model_name=os.getenv(
             "GROQ_MODEL" if self.provider == "groq" else "GEMINI_MODEL",
             configured_model if self.provider != "groq" else "llama-3.3-70b-versatile",
         )
-        self.temperature = llm_cfg.get('temperature', 0.2)
-        self.timeout = max(10.0, float(llm_cfg.get('timeout_seconds', 12.0)))
-        self.api_key = {
+        self.temperature=llm_cfg.get('temperature', 0.2)
+        self.timeout=max(10.0, float(llm_cfg.get('timeout_seconds', 12.0)))
+        self.api_key={
             "groq": os.getenv("GROQ_API_KEY", ""),
             "openai": os.getenv("OPENAI_API_KEY", ""),
             "anthropic": os.getenv("ANTHROPIC_API_KEY", ""),
         }.get(self.provider, os.getenv("GEMINI_API_KEY", ""))
-        self.la_sensor_map = {}
-        self.sd_sensor_map = {}
+        self.la_sensor_map={}
+        self.sd_sensor_map={}
         self._load_sensor_maps()
-        self.llm = self._build_langchain_model(llm_cfg)
+        self.llm=self._build_langchain_model(llm_cfg)
 
     def _build_langchain_model(self, llm_cfg: dict):
         """Create the provider model through LangChain's common interface."""
@@ -79,11 +79,11 @@ class TrafficLLMEngine:
 
     def _load_model_config(self) -> dict:
         """Load model hyper-parameters from model_config.yaml."""
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_config.yaml')
+        config_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_config.yaml')
         if os.path.exists(config_path):
             try:
                 with open(config_path, 'r', encoding='utf-8') as f:
-                    cfg = yaml.safe_load(f)
+                    cfg=yaml.safe_load(f)
                     print(f"[+] LLM Engine: Loaded model_config.yaml ({cfg.get('traffic_llm_engine', {}).get('primary_model')})")
                     return cfg
             except Exception as e:
@@ -92,22 +92,22 @@ class TrafficLLMEngine:
 
     def _load_sensor_maps(self):
         """Load real-world sensor location maps for location-aware LLM reasoning."""
-        data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
-        la_path = os.path.join(data_dir, 'la_sensor_location_map.json')
-        sd_path = os.path.join(data_dir, 'sd_sensor_location_map.json')
+        data_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+        la_path=os.path.join(data_dir, 'la_sensor_location_map.json')
+        sd_path=os.path.join(data_dir, 'sd_sensor_location_map.json')
         
         if os.path.exists(la_path):
             with open(la_path, 'r') as f:
-                self.la_sensor_map = json.load(f)
+                self.la_sensor_map=json.load(f)
             print(f"[+] LLM Engine: Loaded {len(self.la_sensor_map)} METR-LA sensor locations.")
         if os.path.exists(sd_path):
             with open(sd_path, 'r') as f:
-                self.sd_sensor_map = json.load(f)
+                self.sd_sensor_map=json.load(f)
             print(f"[+] LLM Engine: Loaded {len(self.sd_sensor_map)} SD400 sensor locations.")
 
     def _get_sensor_location(self, sensor_id: int, city: str) -> dict:
         """Lookup real-world location for a sensor."""
-        sid_str = str(sensor_id)
+        sid_str=str(sensor_id)
         if "sd" in city:
             return self.sd_sensor_map.get(sid_str, {})
         else:
@@ -115,35 +115,35 @@ class TrafficLLMEngine:
 
     def _get_downstream_locations(self, downstream_nodes: list, city: str) -> str:
         """Get location labels for downstream nodes."""
-        labels = []
+        labels=[]
         for nid in downstream_nodes:
-            loc = self._get_sensor_location(nid, city)
+            loc=self._get_sensor_location(nid, city)
             if loc:
                 labels.append(f"Sensor #{nid} ({loc.get('location_label', 'Unknown')})")
             else:
                 labels.append(f"Sensor #{nid}")
         return ", ".join(labels) if labels else "Downstream Corridor"
 
-    def generate_causal_reasoning(self, prompt: str, sensor_id: int, speed: float, predicted_speed: float, rel: float, status: str, downstream_nodes: list, city: str = "la", time_label: str = "08:15 AM", date_label: str = "2012-03-15", origin_id: int = 0, destination_id: int = 15) -> str:
+    def generate_causal_reasoning(self, prompt: str, sensor_id: int, speed: float, predicted_speed: float, rel: float, status: str, downstream_nodes: list, city: str="la", time_label: str="08:15 AM", date_label: str="2012-03-15", origin_id: int=0, destination_id: int=15) -> str:
         # Real-world location lookup
-        sensor_loc = self._get_sensor_location(sensor_id, city)
-        freeway = sensor_loc.get("freeway", "Highway Corridor")
-        direction = sensor_loc.get("direction", "")
-        neighborhood = sensor_loc.get("neighborhood", "")
-        landmark = sensor_loc.get("nearest_landmark", "")
-        location_label = sensor_loc.get("location_label", f"Node #{sensor_id}")
-        lat = sensor_loc.get("lat", "Unknown")
-        lon = sensor_loc.get("lon", "Unknown")
+        sensor_loc=self._get_sensor_location(sensor_id, city)
+        freeway=sensor_loc.get("freeway", "Highway Corridor")
+        direction=sensor_loc.get("direction", "")
+        neighborhood=sensor_loc.get("neighborhood", "")
+        landmark=sensor_loc.get("nearest_landmark", "")
+        location_label=sensor_loc.get("location_label", f"Node #{sensor_id}")
+        lat=sensor_loc.get("lat", "Unknown")
+        lon=sensor_loc.get("lon", "Unknown")
 
-        origin_loc = self._get_sensor_location(origin_id, city)
-        dest_loc = self._get_sensor_location(destination_id, city)
-        origin_label = origin_loc.get("location_label", f"Sensor #{origin_id}")
-        dest_label = dest_loc.get("location_label", f"Sensor #{destination_id}")
+        origin_loc=self._get_sensor_location(origin_id, city)
+        dest_loc=self._get_sensor_location(destination_id, city)
+        origin_label=origin_loc.get("location_label", f"Sensor #{origin_id}")
+        dest_label=dest_loc.get("location_label", f"Sensor #{destination_id}")
         
-        downstream_str = self._get_downstream_locations(downstream_nodes, city)
-        city_name = "Los Angeles METR-LA" if city == "la" else ("San Diego SD400" if city == "sd" else f"PeMS Dataset ({city.upper()})")
+        downstream_str=self._get_downstream_locations(downstream_nodes, city)
+        city_name="Los Angeles METR-LA" if city == "la" else ("San Diego SD400" if city == "sd" else f"PeMS Dataset ({city.upper()})")
 
-        system_prompt = f"""You are EquiTraffic-GPT, a highly advanced AI Traffic Copilot for the {city_name} highway network.
+        system_prompt=f"""You are EquiTraffic-GPT, a highly advanced AI Traffic Copilot for the {city_name} highway network.
 
 ### LIVE TELEMETRY CONTEXT
 - Current Time: {date_label} at {time_label}
@@ -171,10 +171,10 @@ User Query: {prompt}
         # 1. Live provider call through LangChain's standard invoke() interface
         if self.llm is not None:
             try:
-                response = self.llm.invoke(system_prompt)
-                content = response.content
+                response=self.llm.invoke(system_prompt)
+                content=response.content
                 if isinstance(content, list):
-                    content = "".join(
+                    content="".join(
                         block.get("text", "") if isinstance(block, dict) else str(block)
                         for block in content
                     )
@@ -184,7 +184,7 @@ User Query: {prompt}
                 print(f"[LangChain LLM Exception] {e}")
 
         # 2. Smart Reroute & Pattern Comparison Engine (Offline Mode)
-        prompt_lower = prompt.lower()
+        prompt_lower=prompt.lower()
         
         # Scenario 1: Autonomous 15-Minute Proactive Alert / Auto Reroute Push
         if "auto_alert" in prompt_lower or "15-minute alert" in prompt_lower or "proactive" in prompt_lower:
@@ -209,13 +209,13 @@ User Query: {prompt}
         # Scenario 2: Stadium / Concert / Event
         elif any(w in prompt_lower for w in ["stadium", "concert", "event", "game", "match", "arena"]):
             if "sd" in city:
-                stadium_info = "Snapdragon Stadium (SDSU) on I-15 NB / Mission Village Dr"
-                avoid = "I-15 NB between I-8 and Friars Rd, Mission Village Dr exit ramps"
-                alt = "I-8 West to I-5 South, or take SR-163 South through Balboa Park"
+                stadium_info="Snapdragon Stadium (SDSU) on I-15 NB / Mission Village Dr"
+                avoid="I-15 NB between I-8 and Friars Rd, Mission Village Dr exit ramps"
+                alt="I-8 West to I-5 South, or take SR-163 South through Balboa Park"
             else:
-                stadium_info = "Dodger Stadium on SR-110 (Arroyo Seco Pkwy) / Stadium Way"
-                avoid = "SR-110 NB (Arroyo Seco Pkwy), Stadium Way ramps, Sunset Blvd exits"
-                alt = "I-10 East to North Broadway, or US-101 South bypass to I-5"
+                stadium_info="Dodger Stadium on SR-110 (Arroyo Seco Pkwy) / Stadium Way"
+                avoid="SR-110 NB (Arroyo Seco Pkwy), Stadium Way ramps, Sunset Blvd exits"
+                alt="I-10 East to North Broadway, or US-101 South bypass to I-5"
             return (
                 f"⚡ **EquiTraffic-GPT (Smart Reroute Copilot)**\n"
                 f"🛡️ *[Safety Filter Active: Route Capacity Verified]*\n"
@@ -264,5 +264,5 @@ User Query: {prompt}
             )
 
 # Backward-compatible name for existing integrations.
-GeminiFlashLiteLLMEngine = TrafficLLMEngine
-llm_engine = TrafficLLMEngine()
+GeminiFlashLiteLLMEngine=TrafficLLMEngine
+llm_engine=TrafficLLMEngine()

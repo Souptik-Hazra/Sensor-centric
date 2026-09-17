@@ -2,14 +2,14 @@ import React from 'react';
 import { Globe, Eye, ChevronRight, Sliders } from 'lucide-react';
 import styles from '../MapView.module.css';
 
-const MapViewHeader = ({
+const MapViewHeader=({
   isRightSidebarOpen,
   selectedCity,
   setSelectedCity,
   isFutureVisionActive,
   setIsFutureVisionActive,
   setIsRightSidebarOpen
-}) => {
+})=>{
   return (
     <div className={`${styles.mapHeaderOverlay} ${!isRightSidebarOpen ? styles.mapHeaderOverlayFull : ''}`}>
       <div className={styles.singleHeaderBar}>

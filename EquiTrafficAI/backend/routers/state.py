@@ -2,8 +2,7 @@
 
 from fastapi import APIRouter, Query, Request
 
-router = APIRouter(prefix="/api", tags=["Telemetry & State"])
-
+router=APIRouter(prefix="/api", tags=["Telemetry & State"])
 
 @router.get(
     "/state",
@@ -11,7 +10,7 @@ router = APIRouter(prefix="/api", tags=["Telemetry & State"])
 )
 def get_state(
     request: Request,
-    city: str = Query(
+    city: str=Query(
         "la",
         pattern="^(la|sd|pems04|pems08|pems_bay|pems03|pems07)$",
         description="Target city/corridor",

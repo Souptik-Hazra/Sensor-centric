@@ -61,12 +61,6 @@ src/
 │   ├── Sidebar.jsx                  # Collapsible navigation drawer
 │   └── LlmChatbot.jsx               # Gemini 2.5 LLM Copilot drawer container
 ├── modules/
-│   ├── analytics/
-│   │   ├── components/
-│   │   │   ├── ExecutiveMetricsGrid.jsx # Metric KPI cards
-│   │   │   ├── ParetoFrontierMatrix.jsx # Multi-objective policy matrix
-│   │   │   └── SpeedTrendSvgChart.jsx   # 24-hour SVG playback chart
-│   │   └── AnalyticsView.jsx        # Data analytics view container
 │   ├── gis/
 │   │   ├── components/
 │   │   │   ├── CongestionWarningsCard.jsx # 15-min warning alerts
@@ -76,10 +70,8 @@ src/
 │   │   │   ├── MapViewHeader.jsx         # Top overlay controls
 │   │   │   └── RouteControlPanel.jsx     # Origin/Dest route planner
 │   │   └── MapView.jsx              # Main Web GIS page container
-│   ├── monitoring/
-│   │   └── MonitoringView.jsx       # Telemetry data table
-│   └── settings/
-│       └── SettingsView.jsx         # System configuration panel
+│   └── monitoring/
+│       └── MonitoringView.jsx       # Telemetry data table
 ├── services/
 │   └── apiService.js                # Axios/Fetch API client
 ├── store/

@@ -22,7 +22,7 @@ import pandas as pd
 # ============================================================================
 
 # LA Freeway corridor bounding boxes [lat_min, lat_max, lon_min, lon_max, fwy_name, direction]
-LA_FREEWAY_CORRIDORS = [
+LA_FREEWAY_CORRIDORS=[
     # I-5 (Golden State / Santa Ana Fwy) — runs N-S through central-east LA
     (34.04, 34.13, -118.28, -118.22, "I-5", "N/S", "Downtown LA / Glendale"),
     (34.13, 34.22, -118.28, -118.22, "I-5", "N/S", "Burbank / Sun Valley"),
@@ -56,7 +56,7 @@ LA_FREEWAY_CORRIDORS = [
 ]
 
 # LA Landmark proximity zones [lat, lon, radius_deg, landmark_name]
-LA_LANDMARKS = [
+LA_LANDMARKS=[
     (34.0736, -118.2400, 0.015, "Dodger Stadium"),
     (34.0522, -118.2437, 0.012, "Downtown LA / City Hall"),
     (34.1381, -118.3534, 0.015, "Universal Studios / Studio City"),
@@ -76,31 +76,31 @@ LA_LANDMARKS = [
 def map_la_sensor_to_location(lat, lon, sensor_id):
     """Map a METR-LA sensor to its freeway, direction, neighborhood, and nearest landmark."""
     
-    best_fwy = "Local Arterial"
-    best_dir = ""
-    best_neighborhood = "Los Angeles"
+    best_fwy="Local Arterial"
+    best_dir=""
+    best_neighborhood="Los Angeles"
     
     # Find matching freeway corridor
-    best_dist = float('inf')
+    best_dist=float('inf')
     for lat_min, lat_max, lon_min, lon_max, fwy, direction, neighborhood in LA_FREEWAY_CORRIDORS:
         if lat_min <= lat <= lat_max and lon_min <= lon <= lon_max:
-            center_lat = (lat_min + lat_max) / 2
-            center_lon = (lon_min + lon_max) / 2
-            dist = np.sqrt((lat - center_lat)**2 + (lon - center_lon)**2)
+            center_lat=(lat_min + lat_max) / 2
+            center_lon=(lon_min + lon_max) / 2
+            dist=np.sqrt((lat - center_lat)**2 + (lon - center_lon)**2)
             if dist < best_dist:
-                best_dist = dist
-                best_fwy = fwy
-                best_dir = direction
-                best_neighborhood = neighborhood
+                best_dist=dist
+                best_fwy=fwy
+                best_dir=direction
+                best_neighborhood=neighborhood
     
     # Find nearest landmark
-    nearest_landmark = ""
-    min_landmark_dist = float('inf')
+    nearest_landmark=""
+    min_landmark_dist=float('inf')
     for lm_lat, lm_lon, radius, lm_name in LA_LANDMARKS:
-        d = np.sqrt((lat - lm_lat)**2 + (lon - lm_lon)**2)
+        d=np.sqrt((lat - lm_lat)**2 + (lon - lm_lon)**2)
         if d < radius and d < min_landmark_dist:
-            min_landmark_dist = d
-            nearest_landmark = lm_name
+            min_landmark_dist=d
+            nearest_landmark=lm_name
     
     return {
         "sensor_id": int(sensor_id),
@@ -116,25 +116,25 @@ def map_la_sensor_to_location(lat, lon, sensor_id):
 
 def build_la_sensor_map():
     """Build full METR-LA 207-sensor location map."""
-    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
-    df_loc = pd.read_csv(os.path.join(data_dir, 'sensor_locations.csv'))
+    data_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+    df_loc=pd.read_csv(os.path.join(data_dir, 'sensor_locations.csv'))
     
-    sensor_map = {}
+    sensor_map={}
     for idx, row in df_loc.iterrows():
-        info = map_la_sensor_to_location(row['latitude'], row['longitude'], row['sensor_id'])
-        info['node_index'] = idx
-        sensor_map[int(row['sensor_id'])] = info
+        info=map_la_sensor_to_location(row['latitude'], row['longitude'], row['sensor_id'])
+        info['node_index']=idx
+        sensor_map[int(row['sensor_id'])]=info
     
     return sensor_map
 
 
 def build_sd_sensor_map():
     """Build full SD400 716-sensor location map from sd_meta.csv (already has Fwy, Direction, County)."""
-    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
-    df_sd = pd.read_csv(os.path.join(data_dir, 'sd_meta.csv'))
+    data_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+    df_sd=pd.read_csv(os.path.join(data_dir, 'sd_meta.csv'))
     
     # SD Landmark proximity zones
-    SD_LANDMARKS = [
+    SD_LANDMARKS=[
         (32.7831, -117.1196, 0.015, "Snapdragon Stadium / SDSU"),
         (32.7073, -117.1567, 0.012, "Petco Park / Gaslamp"),
         (32.7157, -117.1611, 0.012, "Downtown San Diego"),
@@ -149,51 +149,51 @@ def build_sd_sensor_map():
         (32.6697, -117.0983, 0.012, "Chula Vista"),
     ]
     
-    sensor_map = {}
+    sensor_map={}
     for idx, row in df_sd.iterrows():
-        lat, lon = float(row['Lat']), float(row['Lng'])
-        fwy = str(row['Fwy'])
-        direction = str(row['Direction'])
+        lat, lon=float(row['Lat']), float(row['Lng'])
+        fwy=str(row['Fwy'])
+        direction=str(row['Direction'])
         
         # Parse freeway name cleanly
-        fwy_clean = fwy.replace('-N', '').replace('-S', '').replace('-E', '').replace('-W', '')
+        fwy_clean=fwy.replace('-N', '').replace('-S', '').replace('-E', '').replace('-W', '')
         
         # Find nearest landmark
-        nearest_landmark = ""
-        min_dist = float('inf')
+        nearest_landmark=""
+        min_dist=float('inf')
         for lm_lat, lm_lon, radius, lm_name in SD_LANDMARKS:
-            d = np.sqrt((lat - lm_lat)**2 + (lon - lm_lon)**2)
+            d=np.sqrt((lat - lm_lat)**2 + (lon - lm_lon)**2)
             if d < radius and d < min_dist:
-                min_dist = d
-                nearest_landmark = lm_name
+                min_dist=d
+                nearest_landmark=lm_name
         
         # Determine neighborhood from lat/lon zones
         if lat < 32.60:
-            neighborhood = "Otay Mesa / San Ysidro"
+            neighborhood="Otay Mesa / San Ysidro"
         elif lat < 32.65:
-            neighborhood = "Chula Vista / National City"
+            neighborhood="Chula Vista / National City"
         elif lat < 32.70:
-            neighborhood = "National City / Barrio Logan"
+            neighborhood="National City / Barrio Logan"
         elif lat < 32.73:
-            neighborhood = "Downtown SD / East Village"
+            neighborhood="Downtown SD / East Village"
         elif lat < 32.76:
-            neighborhood = "Hillcrest / North Park"
+            neighborhood="Hillcrest / North Park"
         elif lat < 32.80:
-            neighborhood = "Mission Valley / Kearny Mesa"
+            neighborhood="Mission Valley / Kearny Mesa"
         elif lat < 32.85:
-            neighborhood = "Clairemont / Miramar"
+            neighborhood="Clairemont / Miramar"
         elif lat < 32.90:
-            neighborhood = "Mira Mesa / Scripps Ranch"
+            neighborhood="Mira Mesa / Scripps Ranch"
         elif lat < 32.95:
-            neighborhood = "Poway / Rancho Bernardo"
+            neighborhood="Poway / Rancho Bernardo"
         elif lat < 33.05:
-            neighborhood = "Escondido / San Marcos"
+            neighborhood="Escondido / San Marcos"
         elif lat < 33.15:
-            neighborhood = "Vista / Oceanside"
+            neighborhood="Vista / Oceanside"
         else:
-            neighborhood = "North County / Camp Pendleton"
+            neighborhood="North County / Camp Pendleton"
         
-        info = {
+        info={
             "sensor_id": int(row['ID']),
             "node_index": idx,
             "lat": lat,
@@ -206,20 +206,20 @@ def build_sd_sensor_map():
             "nearest_landmark": nearest_landmark,
             "location_label": f"{fwy_clean} {direction}B near {neighborhood}" + (f" ({nearest_landmark})" if nearest_landmark else "")
         }
-        sensor_map[int(row['ID'])] = info
+        sensor_map[int(row['ID'])]=info
     
     return sensor_map
 
 
 def save_sensor_maps():
     """Build and save both sensor maps to JSON for backend + LLM consumption."""
-    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+    data_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
     
-    la_map = build_la_sensor_map()
-    sd_map = build_sd_sensor_map()
+    la_map=build_la_sensor_map()
+    sd_map=build_sd_sensor_map()
     
-    la_path = os.path.join(data_dir, 'la_sensor_location_map.json')
-    sd_path = os.path.join(data_dir, 'sd_sensor_location_map.json')
+    la_path=os.path.join(data_dir, 'la_sensor_location_map.json')
+    sd_path=os.path.join(data_dir, 'sd_sensor_location_map.json')
     
     with open(la_path, 'w') as f:
         json.dump(la_map, f, indent=2)
@@ -230,12 +230,12 @@ def save_sensor_maps():
     print(f"[+] SD400 Sensor Location Map: {len(sd_map)} sensors -> {sd_path}")
     
     # Print sample entries
-    sample_la = list(la_map.values())[:5]
+    sample_la=list(la_map.values())[:5]
     print("\n--- METR-LA Sample Mappings ---")
     for s in sample_la:
         print(f"  Sensor #{s['sensor_id']}: {s['location_label']}")
     
-    sample_sd = list(sd_map.values())[:5]
+    sample_sd=list(sd_map.values())[:5]
     print("\n--- SD400 Sample Mappings ---")
     for s in sample_sd:
         print(f"  Sensor #{s['sensor_id']}: {s['location_label']}")

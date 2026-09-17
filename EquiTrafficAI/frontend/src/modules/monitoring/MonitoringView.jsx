@@ -2,12 +2,12 @@ import React, { useEffect, useMemo } from 'react';
 import useTrafficStore from '../../store/useTrafficStore';
 import styles from './MonitoringView.module.css';
 
-const MonitoringView = () => {
+const MonitoringView=() => {
   // Optimized Atomic Zustand Selectors to prevent unnecessary component re-renders
-  const sensors = useTrafficStore((state) => state.sensors);
-  const trafficData = useTrafficStore((state) => state.trafficData);
-  const currentTimestampIndex = useTrafficStore((state) => state.currentTimestampIndex);
-  const initializeData = useTrafficStore((state) => state.initializeData);
+  const sensors=useTrafficStore((state) => state.sensors);
+  const trafficData=useTrafficStore((state) => state.trafficData);
+  const currentTimestampIndex=useTrafficStore((state) => state.currentTimestampIndex);
+  const initializeData=useTrafficStore((state) => state.initializeData);
 
   useEffect(() => {
     if (sensors.length === 0) {
@@ -16,13 +16,13 @@ const MonitoringView = () => {
   }, [sensors.length, initializeData]);
 
   // Memoized speed lookup map for O(1) rendering speed
-  const speedMap = useMemo(() => {
-    const map = new Map();
+  const speedMap=useMemo(() => {
+    const map=new Map();
     trafficData.forEach((d) => map.set(String(d.sensor_id), d));
     return map;
   }, [trafficData]);
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge=(status) => {
     switch (status) {
       case 'fast': return <span className={`${styles.badge} ${styles.fast}`}>Clear</span>;
       case 'medium': return <span className={`${styles.badge} ${styles.medium}`}>Moderate</span>;
@@ -53,17 +53,17 @@ const MonitoringView = () => {
           </thead>
           <tbody>
             {sensors.map(sensor => {
-              const data = speedMap.get(String(sensor.sensor_id));
-              const currentSpeed = data?.speed ?? sensor.speed ?? 58.5;
-              const backendStatus = String(data?.status || sensor.status || '').toLowerCase();
-              const statusType = backendStatus.includes('congest') || backendStatus === 'slow'
+              const data=speedMap.get(String(sensor.sensor_id));
+              const currentSpeed=data?.speed ?? sensor.speed ?? 58.5;
+              const backendStatus=String(data?.status || sensor.status || '').toLowerCase();
+              const statusType=backendStatus.includes('congest') || backendStatus === 'slow'
                 ? 'slow'
                 : backendStatus.includes('moderate') || backendStatus === 'medium'
                   ? 'medium'
                   : backendStatus === 'fast' || backendStatus === 'free_flow' || currentSpeed >= 50
                     ? 'fast'
                     : currentSpeed >= 25 ? 'medium' : 'slow';
-              const locationName = sensor.location_label || sensor.name || `Corridor Sensor #${sensor.sensor_id}`;
+              const locationName=sensor.location_label || sensor.name || `Corridor Sensor #${sensor.sensor_id}`;
 
               return (
                 <tr key={sensor.sensor_id}>

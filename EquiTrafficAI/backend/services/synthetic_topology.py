@@ -13,9 +13,9 @@ def generate_synthetic_pems_topology(
 ) -> dict[str, Any]:
     """Generate a deterministic synthetic sensor topology for a PeMS dataset."""
     np.random.seed(42)
-    nodes, edges = [], []
-    latitudes = center_lat + np.cumsum(np.random.randn(num_nodes) * 0.003)
-    longitudes = center_lon + np.cumsum(np.random.randn(num_nodes) * 0.003)
+    nodes, edges=[], []
+    latitudes=center_lat + np.cumsum(np.random.randn(num_nodes) * 0.003)
+    longitudes=center_lon + np.cumsum(np.random.randn(num_nodes) * 0.003)
 
     for index in range(num_nodes):
         nodes.append({

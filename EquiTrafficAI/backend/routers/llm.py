@@ -1,11 +1,8 @@
 """LLM copilot API routes."""
-
 from fastapi import APIRouter, Request
-
 from ..schemas import LLMQueryRequest
 
-router = APIRouter(prefix="/api/llm", tags=["AI Copilot"])
-
+router=APIRouter(prefix="/api/llm", tags=["AI Copilot"])
 
 @router.post("/reasoning", response_description="Gemini LLM Causal Reroute Copilot Analysis")
 def llm_reasoning(request: Request, query: LLMQueryRequest):

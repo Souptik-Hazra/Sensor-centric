@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, Play, Pause, RotateCcw } from 'lucide-react';
 import styles from '../MapView.module.css';
 
-const MapPlaybackCard = ({
+const MapPlaybackCard=({
   date,
   setDate,
   step,
@@ -12,7 +12,7 @@ const MapPlaybackCard = ({
   getDisplayTime,
   speedMultiplier,
   setSpeedMultiplier
-}) => {
+})=>{
   return (
     <div className={`${styles.card} ${styles.cardPrimary}`}>
       <div className={`${styles.cardTitle} ${styles.cardTitlePrimary}`}>

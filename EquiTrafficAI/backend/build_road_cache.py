@@ -10,19 +10,19 @@ import pandas as pd
 import requests
 
 
-data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
-locations_path = os.path.join(data_dir, "sensor_locations.csv")
-distances_path = os.path.join(data_dir, "distances.csv")
-cache_path = os.path.join(data_dir, "osrm_road_cache.json")
+data_dir=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+locations_path=os.path.join(data_dir, "sensor_locations.csv")
+distances_path=os.path.join(data_dir, "distances.csv")
+cache_path=os.path.join(data_dir, "osrm_road_cache.json")
 
-locations = pd.read_csv(locations_path)
-distances = pd.read_csv(distances_path)
-locs = {
+locations=pd.read_csv(locations_path)
+distances=pd.read_csv(distances_path)
+locs={
     int(row.sensor_id): (float(row.latitude), float(row.longitude))
     for row in locations.itertuples()
 }
-valid_ids = set(locs)
-edges = {
+valid_ids=set(locs)
+edges={
     (int(row["from"]), int(row["to"]))
     for _, row in distances.iterrows()
     if row["from"] in valid_ids
@@ -34,12 +34,12 @@ edges = {
 
 
 def haversine_miles(first, second):
-    lat1, lon1 = first
-    lat2, lon2 = second
-    radius = 3958.8
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    value = (
+    lat1, lon1=first
+    lat2, lon2=second
+    radius=3958.8
+    dlat=math.radians(lat2 - lat1)
+    dlon=math.radians(lon2 - lon1)
+    value=(
         math.sin(dlat / 2) ** 2
         + math.cos(math.radians(lat1))
         * math.cos(math.radians(lat2))
@@ -60,8 +60,8 @@ def valid_geometry(coords, start, end):
 
 
 def save_cache(cache):
-    directory = os.path.dirname(cache_path)
-    handle, temporary_path = tempfile.mkstemp(prefix="osrm_cache_", suffix=".json", dir=directory)
+    directory=os.path.dirname(cache_path)
+    handle, temporary_path=tempfile.mkstemp(prefix="osrm_cache_", suffix=".json", dir=directory)
     try:
         with os.fdopen(handle, "w", encoding="utf-8") as file:
             json.dump(cache, file, separators=(",", ":"))
@@ -80,48 +80,48 @@ def save_cache(cache):
             os.remove(temporary_path)
 
 
-cache = {}
+cache={}
 if os.path.exists(cache_path):
     with open(cache_path, encoding="utf-8") as file:
-        loaded = json.load(file)
-    cache = {
+        loaded=json.load(file)
+    cache={
         key: value
         for key, value in loaded.items()
         if "-" in key and valid_geometry(value, locs[int(key.split("-")[0])], locs[int(key.split("-")[1])])
     }
 
-pending = sorted(edges - {
+pending=sorted(edges - {
     (int(key.split("-")[0]), int(key.split("-")[1])) for key in cache
 })
 print(f"[OSRM Cache Builder] Graph edges: {len(edges)}")
 print(f"[OSRM Cache Builder] Valid cached edges: {len(cache)}")
 print(f"[OSRM Cache Builder] Missing edges to fetch: {len(pending)}")
 
-session = requests.Session()
-new_count = 0
-osrm_count = 0
-fallback_count = 0
-retry_count = 0
-checkpoint_interval = 25
+session=requests.Session()
+new_count=0
+osrm_count=0
+fallback_count=0
+retry_count=0
+checkpoint_interval=25
 
 for from_id, to_id in pending:
-    start = locs[from_id]
-    end = locs[to_id]
-    key = f"{from_id}-{to_id}"
-    coords = None
+    start=locs[from_id]
+    end=locs[to_id]
+    key=f"{from_id}-{to_id}"
+    coords=None
     for attempt in range(3):
         try:
-            url = (
+            url=(
                 "http://router.project-osrm.org/route/v1/driving/"
                 f"{start[1]:.6f},{start[0]:.6f};{end[1]:.6f},{end[0]:.6f}"
                 "?overview=full&geometries=geojson"
             )
-            response = session.get(url, timeout=10)
-            route_data = response.json() if response.status_code == 200 else {}
-            raw_coords = route_data.get("routes", [{}])[0].get("geometry", {}).get("coordinates", [])
-            candidate = [[point[1], point[0]] for point in raw_coords]
+            response=session.get(url, timeout=10)
+            route_data=response.json() if response.status_code == 200 else {}
+            raw_coords=route_data.get("routes", [{}])[0].get("geometry", {}).get("coordinates", [])
+            candidate=[[point[1], point[0]] for point in raw_coords]
             if valid_geometry(candidate, start, end):
-                coords = candidate
+                coords=candidate
                 osrm_count += 1
                 break
         except (ValueError, IndexError, KeyError, requests.RequestException):
@@ -131,9 +131,9 @@ for from_id, to_id in pending:
             time.sleep(1.5 * (attempt + 1))
 
     if coords is None:
-        coords = [[start[0], start[1]], [end[0], end[1]]]
+        coords=[[start[0], start[1]], [end[0], end[1]]]
         fallback_count += 1
-    cache[key] = coords
+    cache[key]=coords
     new_count += 1
 
     if new_count % checkpoint_interval == 0:

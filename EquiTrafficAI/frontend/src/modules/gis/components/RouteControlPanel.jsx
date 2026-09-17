@@ -13,7 +13,7 @@ const RouteControlPanel = ({
   calculateSmartRoute,
   isRouting,
   routeResult
-}) => {
+})=>{
   return (
     <div className={`${styles.card} ui-card-cyan`}>
       <div className={`${styles.cardTitle} text-cyan`}>
@@ -27,10 +27,10 @@ const RouteControlPanel = ({
           <select 
             id="select-route-origin"
             value={originNodeId} 
-            onChange={(e) => {
+            onChange={(e)=>{
               const newOrigin = parseInt(e.target.value);
               setOriginNodeId(newOrigin);
-              if (newOrigin === destinationNodeId) {
+              if(newOrigin === destinationNodeId) {
                 const altDest = nodes.find(n => n.id !== newOrigin)?.id || (newOrigin + 1) % nodes.length;
                 setDestinationNodeId(altDest);
               }
@@ -38,7 +38,7 @@ const RouteControlPanel = ({
             className="ui-select-dark mt-2"
             aria-label="Select Route Starting Sensor"
           >
-            {nodes.map(n => (
+            {nodes.map(n=>(
               <option key={n.id} value={n.id}>
                 Node #{n.id} / Sensor #{n.sensor_id || 'unknown'} — {n.location_label || `Corridor Node #${n.id}`} ({n.speed} mph)
               </option>
@@ -51,18 +51,18 @@ const RouteControlPanel = ({
           <select 
             id="select-route-dest"
             value={destinationNodeId} 
-            onChange={(e) => {
+            onChange={(e)=>{
               const newDest = parseInt(e.target.value);
               setDestinationNodeId(newDest);
-              if (newDest === originNodeId) {
-                const altOrigin = nodes.find(n => n.id !== newDest)?.id || (newDest + 1) % nodes.length;
+              if(newDest === originNodeId) {
+                const altOrigin = nodes.find(n=>n.id !== newDest)?.id || (newDest + 1) % nodes.length;
                 setOriginNodeId(altOrigin);
               }
             }}
             className="ui-select-dark mt-2"
             aria-label="Select Route Destination Sensor"
           >
-            {nodes.map(n => (
+            {nodes.map(n=>(
               <option key={n.id} value={n.id}>
                 Node #{n.id} / Sensor #{n.sensor_id || 'unknown'} — {n.location_label || `Corridor Node #${n.id}`} ({n.speed} mph)
               </option>

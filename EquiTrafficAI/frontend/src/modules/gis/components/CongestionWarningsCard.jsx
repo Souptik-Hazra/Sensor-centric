@@ -1,8 +1,7 @@
-import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import styles from '../MapView.module.css';
 
-const CongestionWarningsCard = ({ upcoming15MinWarnings, getDisplayTime, step }) => {
+const CongestionWarningsCard=({ upcoming15MinWarnings, getDisplayTime, step })=>{
   return (
     <div className={`${styles.card} ui-card-danger`}>
       <div className={`${styles.cardTitle} text-rose`}>
@@ -12,7 +11,7 @@ const CongestionWarningsCard = ({ upcoming15MinWarnings, getDisplayTime, step })
 
       {upcoming15MinWarnings.length > 0 ? (
         <div className="ui-scroll-list">
-          {upcoming15MinWarnings.map((w, idx) => (
+          {upcoming15MinWarnings.map((w, idx) =>(
             <div key={idx} className="ui-badge-danger">
               🚨 <strong>{w.location_label}</strong><br/>
               <span className="text-rose">Predicted Drop: {w.predicted_speed} mph in 15 mins</span>

@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../MapView.module.css';
 
-const MapLegend = () => {
+const MapLegend=()=>{
   return (
     <div className={styles.mapLegend}>
       <div className={styles.legendTitle}>Visual Map Legend</div>
