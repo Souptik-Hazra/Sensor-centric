@@ -94,7 +94,7 @@ export default function LlmChatbot() {
     } catch (err) {
       console.error('Auto alert fetch error:', err);
     }
-  }, [getDisplayTime, selectedCity]);
+  }, [getDisplayTime, selectedCity, currentDate]);
 
   // Autonomous 15-Minute Proactive Alert Engine (Triggers every 3 steps=15 minutes)
   useEffect(()=>{
@@ -163,7 +163,7 @@ export default function LlmChatbot() {
     finally {
       setIsLoading(false);
     }
-  }, [inputPrompt, currentStep, getDisplayTime, selectedCity]);
+  }, [inputPrompt, currentStep, getDisplayTime, selectedCity, currentDate, originNodeId, destinationNodeId]);
 
   return (
     <>
