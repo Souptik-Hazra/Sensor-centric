@@ -3,11 +3,11 @@ import Sidebar from './Sidebar';
 import LlmChatbot from './LlmChatbot';
 import styles from './Layout.module.css';
 
-const Layout=()=> {
+const Layout=()=>{
   const location=useLocation();
   const isMapPage=location.pathname === '/map';
   
-  const getPageTitle=()=> {
+  const getPageTitle=()=>{
     switch (location.pathname) {
       case '/': return 'Traffic Monitoring';
       case '/map': return 'Web GIS';

@@ -1,7 +1,7 @@
 import styles from '../LlmChatbot.module.css';
 
 const QUICK_PROMPTS = [
-  "🚗 Which way to avoid & use if starting now?",
+  "Which way to avoid & use if starting now?",
   //"🚨 15-Min Historical Pattern Comparison",
   //"🏟️ Dodger Stadium Event Reroute",
   //"🚧 Road Blockade Egress Route"

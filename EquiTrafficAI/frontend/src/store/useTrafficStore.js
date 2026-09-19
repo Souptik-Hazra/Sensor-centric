@@ -11,7 +11,7 @@ const useTrafficStore = create((set, get) => ({
   error: null,
 
   // Actions
-  initializeData: async () => {
+  initializeData: async ()=>{
     set({ isLoading: true, error: null });
     try {
       const topology = await fetchSensors();
@@ -31,7 +31,8 @@ const useTrafficStore = create((set, get) => ({
 
   setTimestampIndex: async (index, _city = "la") => {
     // Only update if it changed
-    if (index === get().currentTimestampIndex) return;
+    if(index === get().currentTimestampIndex) 
+      return;
     
     set({ currentTimestampIndex: index });
     

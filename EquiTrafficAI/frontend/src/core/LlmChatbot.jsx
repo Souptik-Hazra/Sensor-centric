@@ -33,11 +33,16 @@ export default function LlmChatbot() {
   useEffect(()=>{
     const handleStateSync=(e)=>{
       if(e.detail) {
-        if(e.detail.step !== undefined) setCurrentStep(e.detail.step);
-        if(e.detail.city !== undefined) setSelectedCity(e.detail.city);
-        if(e.detail.date !== undefined) setCurrentDate(e.detail.date);
-        if(e.detail.origin_id !== undefined) setOriginNodeId(e.detail.origin_id);
-        if(e.detail.destination_id !== undefined) setDestinationNodeId(e.detail.destination_id);
+        if(e.detail.step !== undefined) 
+          setCurrentStep(e.detail.step);
+        if(e.detail.city !== undefined) 
+          setSelectedCity(e.detail.city);
+        if(e.detail.date !== undefined) 
+          setCurrentDate(e.detail.date);
+        if(e.detail.origin_id !== undefined) 
+          setOriginNodeId(e.detail.origin_id);
+        if(e.detail.destination_id !== undefined) 
+          setDestinationNodeId(e.detail.destination_id);
       }
     };
     window.addEventListener('app-state-sync', handleStateSync);
@@ -45,24 +50,24 @@ export default function LlmChatbot() {
   }, []);
 
   const getDisplayTime=useCallback((step)=>{
-    const totalMinutes=step * 5;
+    const totalMinutes=step*5;
     const hours=Math.floor(totalMinutes / 60);
-    const mins=totalMinutes % 60;
-    const ampm=hours >= 12 ? 'PM' : 'AM';
-    const displayHours=hours % 12 === 0 ? 12 : hours % 12;
-    const displayMins=mins < 10 ? '0' + mins : mins;
+    const mins=totalMinutes%60;
+    const ampm=hours>=12 ? 'PM' : 'AM';
+    const displayHours=hours%12 === 0 ? 12 : hours%12;
+    const displayMins=mins<10 ? '0'+mins : mins;
     return `${displayHours}:${displayMins} ${ampm}`;
   }, []);
 
   const scrollToBottom=useCallback(()=>{
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior:'smooth'});
   }, []);
 
   useEffect(()=>{
     if(isOpen) {
       scrollToBottom();
     }
-  }, [messages, isOpen, scrollToBottom]);
+  }, [messages,isOpen, scrollToBottom]);
 
   const triggerProactive15MinAlert=useCallback(async (stepVal)=>{
     const timeLabel=getDisplayTime(stepVal);
@@ -77,13 +82,11 @@ export default function LlmChatbot() {
       const data=await requestLlmReasoning(payload);
       if(data) {
         setMessages(prev=>{
-          if(prev.length > 0 && prev[prev.length - 1].text === data.llm_response) {
+          if(prev.length>0 && prev[prev.length-1].text === data.llm_response){
             return prev;
           }
           return [...prev, {
-            sender: 'bot',
-            text: data.llm_response,
-            time: timeLabel,
+            sender: 'bot',text: data.llm_response,time: timeLabel,
             isAutoAlert: true
           }];
         });
@@ -95,7 +98,7 @@ export default function LlmChatbot() {
 
   // Autonomous 15-Minute Proactive Alert Engine (Triggers every 3 steps=15 minutes)
   useEffect(()=>{
-    if(currentStep > 0 && currentStep % 3 === 0 && currentStep !== lastAlertStep) {
+    if(currentStep>0 && currentStep%3 === 0 && currentStep!==lastAlertStep) {
       setLastAlertStep(currentStep);
       triggerProactive15MinAlert(currentStep);
     }
@@ -103,7 +106,8 @@ export default function LlmChatbot() {
 
   const handleSendMessage=useCallback(async (customText='')=>{
     const textToSend=customText || inputPrompt;
-    if(!textToSend.trim()) return;
+    if(!textToSend.trim()) 
+      return;
 
     const userMsg={
       sender: 'user',
@@ -112,10 +116,11 @@ export default function LlmChatbot() {
     };
 
     setMessages(prev => [...prev, userMsg]);
-    if(!customText) setInputPrompt('');
+    if(!customText) 
+      setInputPrompt('');
     setIsLoading(true);
 
-    try {
+    try{
       const payload={
         prompt: textToSend,
         sensor_id: originNodeId,
@@ -127,7 +132,7 @@ export default function LlmChatbot() {
       };
       
       const data=await requestLlmReasoning(payload);
-      if(data) {
+      if(data){
         const botMsg={
           sender: 'bot',
           text: data.llm_response,
@@ -141,10 +146,12 @@ export default function LlmChatbot() {
             detail: data.route_result || { recommended_path_coords: data.recommended_path_coords, congested_avoid_coords: [] }
           }));
         }
-      } else {
+      } 
+      else {
         throw new Error('API response not ok');
       }
-    } catch (err) {
+    } 
+    catch(err){
       console.error('LLM API Call Error:', err);
       const errorMsg={
         sender: 'bot',
@@ -152,7 +159,8 @@ export default function LlmChatbot() {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, errorMsg]);
-    } finally {
+    } 
+    finally {
       setIsLoading(false);
     }
   }, [inputPrompt, currentStep, getDisplayTime, selectedCity]);
@@ -185,23 +193,18 @@ export default function LlmChatbot() {
           />
 
           {/* Messages Body Sub-Component */}
-          <ChatMessageList 
-            messages={messages} 
-            isLoading={isLoading} 
+          <ChatMessageList messages={messages} isLoading={isLoading} 
             messagesEndRef={messagesEndRef} 
           />
 
           {/* Quick Action Prompt Chips Sub-Component */}
-          <QuickPromptChips 
-            handleSendMessage={handleSendMessage} 
+          <QuickPromptChips handleSendMessage={handleSendMessage} 
             isLoading={isLoading} 
           />
 
           {/* Input Footer Sub-Component */}
-          <ChatInputFooter 
-            inputPrompt={inputPrompt}
-            setInputPrompt={setInputPrompt}
-            handleSendMessage={handleSendMessage}
+          <ChatInputFooter inputPrompt={inputPrompt}
+            setInputPrompt={setInputPrompt} handleSendMessage={handleSendMessage}
             isLoading={isLoading}
           />
 

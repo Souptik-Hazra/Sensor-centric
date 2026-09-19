@@ -1,7 +1,7 @@
 import { Bot, AlertTriangle } from 'lucide-react';
 import styles from '../LlmChatbot.module.css';
 
-const parseMarkdown=(text)=> {
+const parseMarkdown=(text)=>{
   if(!text) 
     return '';
   let html=text;
